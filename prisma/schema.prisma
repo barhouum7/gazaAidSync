@@ -1,0 +1,26 @@
+// prisma/schema.prisma
+datasource db {
+    provider  = "postgresql"
+    url  	    = env("DATABASE_URL")
+    // uncomment next line if you use Prisma <5.10
+    // directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model AidPoint {
+    id          String @id @default(cuid())
+    name        String
+    latitude    Float
+    longitude   Float
+    needs       String
+    ngoLink     String
+    category    String   // e.g., "hospital", "shelter", "aid_distribution"
+    status      String   // e.g., "critical", "needs_supplies", "operational"
+    lastUpdated DateTime @default(now())
+    createdAt   DateTime @default(now())
+
+    @@map("aid_points")
+}
