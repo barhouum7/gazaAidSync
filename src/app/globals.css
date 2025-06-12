@@ -1,9 +1,66 @@
+@tailwind utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @import '../styles/map.css';
 
+@plugin '../../hero.ts';
+/* // Note: You may need to change the path to fit your project structure */
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
 @custom-variant dark (&:is(.dark *));
+
+
+@theme {
+  /* @keyframes bounce-right {
+      0%, 100% {
+        transform: translateX(0);
+        animationTimingFunction: cubic-bezier(0.8, 0, 1, 1);
+      }
+      50% {
+        transform: translateX(25%);
+        animationTimingFunction: cubic-bezier(0, 0, 0.2, 1);
+      }
+  }, */
+
+  @keyframes bounce-right {
+    0%, 100% {
+      transform: translateX(0);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: translateX(25%);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+  
+  --animate-bounce-right: bounce-right 1s infinite;
+}
+
+
+/* @theme {
+  @keyframes accordion-down {
+    0% {
+      height: 0;
+    }
+    100% {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    0% {
+      height: var(--radix-accordion-content-height);
+    }
+    100% {
+      height: 0;
+    }
+  }
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+} */
+
 
 @theme inline {
   --color-background: var(--background);
@@ -121,4 +178,34 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+html {
+  font-size: 16px; /* Default font size */
+  scroll-behavior: smooth; /* Smooth scrolling */
+  -webkit-font-smoothing: antialiased; /* For better font rendering */
+  -moz-osx-font-smoothing: grayscale; /* For better font rendering */
+  zoom: 90%; /* Prevent zooming on mobile */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-y: overlay; /* Overlay scrollbar for better UX */
+  /* scrollbar-width: thin; Thin scrollbar for Firefox */
+  /* scrollbar-color: var(--color-border) transparent; Custom scrollbar color for Firefox */
+  /* overscroll-behavior: contain; Prevents scroll chaining */
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+::-webkit-scrollbar-corner {
+  background-color: transparent;
 }
