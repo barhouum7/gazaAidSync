@@ -9,7 +9,8 @@
         "no-empty": "off",
         "no-fallthrough": "off",
         "no-async-promise-executor": "off",
-        "no-unused-expressions": "off"
+        "no-unused-expressions": "off",
+        "@typescript-eslint/no-explicit-any": "off"
     },
     "env": {
         "browser": true,
