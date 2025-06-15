@@ -77,7 +77,12 @@ export default function ResizableSidebar({
     <>
       <motion.div
         ref={sidebarRef}
-        className="relative flex"
+        className="
+        relative h-full my-52 overflow-hidden
+        flex-shrink-0 py-20 flex flex-col items-center justify-center -ml-3
+        bg-background dark:bg-background-dark border-r border-border dark:border-border-dark
+        transition-all duration-300 ease-in-out rounded-lg shadow-lg
+        "
         initial={false}
         animate={{
           width: isCollapsed ? 0 : width,
@@ -113,7 +118,7 @@ export default function ResizableSidebar({
           whileHover={{ width: "4px" }}
           onMouseDown={startResizing}
         >
-          <div className="absolute opacity-100 bg-white p-1 rounded-md shadow-md">
+          <div className="z-40 absolute opacity-100 bg-white p-1 rounded-md shadow-md">
             <GripVertical className="h-4 w-4 text-gray-500" />
           </div>
         </motion.div>
@@ -123,7 +128,7 @@ export default function ResizableSidebar({
       <AnimatePresence>
         <motion.div
           className={cn(
-            "absolute top-16 z-50 left-2",
+            "fixed top-16 z-50 left-2",
           )}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}

@@ -32,7 +32,7 @@ export default function MainGrid({ left, center, right }: MainGridProps) {
             >
                 <div className="flex flex-col gap-4 md:gap-8 w-full md:w-1/3 flex-grow">
                     <div className="w-full flex flex-col md:flex-row gap-y-4 md:gap-x-4 items-start justify-between">
-                        <div className="h-auto w-full">
+                        <div className="relative h-full w-full">
                             {center}
                         </div>
                     
