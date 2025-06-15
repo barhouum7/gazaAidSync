@@ -111,8 +111,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   
   /* Popup Styles */
   .custom-popup .leaflet-popup-content-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .custom-popup .leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
   }
   
   .custom-popup .leaflet-popup-content {
@@ -161,3 +168,71 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .sidebar-resize-handle:hover {
     width: 4px !important;
   }
+
+
+
+  /* Enhanced Timeline Control */
+.timeline-slider {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #3b82f6 var(--value), #e2e8f0 var(--value));
+}
+
+.timeline-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.timeline-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Enhanced Filter Buttons */
+.filter-button {
+    transition: all 0.3s ease;
+}
+
+.filter-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Statistics Cards */
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* Progress Bars */
+.progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #e2e8f0;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* Chart Tooltips */
+.recharts-tooltip-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: blur(4px);
+}
