@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { ReliefLocation, ReliefLocationType } from '@/types/map';
 import { locationService } from '@/lib/services/location-service';
 
@@ -31,12 +31,16 @@ export const useMapState = () => {
     }, []);
 
     const addLocation = useCallback(async (location: Omit<ReliefLocation, 'id'>) => {
+        const tempId = crypto.randomUUID();
+        setLocations(prev => [...prev, { ...location, id: tempId }]);
         try {
             const newLocation = await locationService.addLocation(location);
-            setLocations(prev => [...prev, newLocation]);
+            setLocations(prev => prev.map(loc => 
+                loc.id === tempId ? newLocation : loc
+            ));
             return newLocation;
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add location');
+            setLocations(prev => prev.filter(loc => loc.id !== tempId));
             throw err;
         }
     }, []);
@@ -70,9 +74,27 @@ export const useMapState = () => {
         }
     }, [selectedLocation]);
 
-    const filteredLocations = locations.filter(
-        location => activeFilters.includes(location.type)
-    );
+    const retryOperation = useCallback(async (
+        operation: () => Promise<any>,
+        maxRetries = 3
+    ) => {
+        let lastError;
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                return await operation();
+            } catch (err) {
+                lastError = err;
+                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+            }
+        }
+        throw lastError;
+    }, []);
+
+    const filteredLocations = useMemo(() => {
+        const filtered = locations.filter(location => activeFilters.includes(location.type));
+        // console.log('[FROM useMapState: ] Filtered locations:', filtered);
+        return filtered;
+    }, [locations, activeFilters]);
 
     return {
         locations: filteredLocations,
@@ -85,5 +107,6 @@ export const useMapState = () => {
         addLocation,
         updateLocation,
         removeLocation,
+        retryOperation
     };
 };
