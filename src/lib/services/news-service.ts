@@ -31,7 +31,7 @@ class NewsService {
         'قوات الاحتلال', 'كمين', 'اشتباك', 'هجوم', 'قصف',
         'مقتل جندي', 'مقتل جنود', 'إصابة جندي', 'إصابة جنود',
         'الجيش', 'إطلاق نار', 'عملية عسكرية', 'توغل', 'دبابة', 'صاروخ', 'مروحية', 'طائرة حربية',
-        'مستوطنة', 'مستوطنين', 'مستوطن', 'إسرائيليون', 'إسرائيليين', 'إسرائيلي',
+        'مستوطنة', 'مستوطنين', 'مستوطن', 'إسرائيليون', 'إسرائيليين',
         'جنود الاحتلال', 'قوات إسرائيلية', 'قوات خاصة', 'قوات عسكرية', 'موقع عسكري', 'مواقع عسكرية',
         'مقتل ضابط', 'إصابة ضابط', 'ضابط إسرائيلي', 'ضباط إسرائيليين',
     ];
@@ -39,14 +39,26 @@ class NewsService {
     // Civilian/humanitarian focus keywords
     private readonly civilianKeywords = [
         'مدني', 'مدنيين', 'مستشفى', 'مشفى', 'إغاثة', 'مساعدات', 'نزوح', 'لاجئ', 'عائلة', 'أطفال', 'نساء',
-        'مأوى', 'مخيم', 'جرحى', 'مصاب', 'شهيد', 'مقتل مدني', 'توزيع مساعدات', 'مياه', 'طعام', 'دواء', 'عيادة', 'إسعاف'
+        'مأوى', 'مخيم', 'جرحى', 'مصاب', 'شهيد', 'مقتل مدني', 'توزيع مساعدات', 'مياه', 'طعام', 'دواء', 'عيادة', 'إسعاف',
+        'منتظر', 'منتظري', 'معونة', 'إغاثة إنسانية', 'مساعدات إنسانية', 'مساعدات طبية', 'مساعدات غذائية',
+        'توزيع', 'معونة', 'إيواء', 'إجلاء', 'نزوح', 'لاجئين', 'عائلات', 'أسر', 'أطفال', 'نساء', 'مدنيين',
+        'منازل', 'منزل', 'سكن', 'سكني', 'سكنية', 'مأوى', 'مأوى مؤقت', 'مخيم', 'مخيمات', 'مخيمات لاجئين', 'مخيمات إيواء', 'مخيمات إغاثة', 'مخيمات إغاثية',
+        'مخيمات إيواء مؤقتة', 'مخيمات إيواء طارئة', 'مخيمات إيواء عاجلة', 'مخيمات إيواء إنسانية', 'مخيمات إيواء مدنية',
     ];
 
     private shouldInclude(content: string): boolean {
         const isMilitary = this.excludeKeywords.some(keyword => content.includes(keyword));
         const isCivilian = this.civilianKeywords.some(keyword => content.includes(keyword));
-        // Allow if civilian/humanitarian, even if military terms are present
-        return isCivilian || !isMilitary;
+        const hasLocation = Object.keys(this.locationMap).some(loc => content.includes(loc));
+        // const hasGazaContext = content.includes('غزة') || content.includes('قطاع غزة');
+        
+        // Allow if:
+        // 1. It's civilian-focused (even if it has military terms), OR
+        // 2. It's not purely military (contains some civilian terms), OR
+        // 3. It mentions a specific location (even if military-focused)
+        return isCivilian || // Allow any civilian-focused update
+            (!isMilitary && hasLocation) || 
+            hasLocation;
     }
 
     // Expanded location mapping for Gaza
@@ -81,7 +93,7 @@ class NewsService {
     // Enhanced keyword mapping for better context understanding
     private readonly contextKeywords = {
         medical: {
-            keywords: ['إصابة', 'جرحى', 'مستشفى', 'طبي', 'صحي', 'علاج', 'جرح', 'دم'],
+            keywords: ['إصابة', 'جرحى', 'مستشفى', 'طبي', 'صحي', 'علاج', 'جرح', 'دم', 'إسعاف', 'عيادة', 'طبيب', 'مريض', 'دواء', 'علاج', 'علاج طبي', 'شهيدا', 'إسعافات أولية'],
             needs: ['Medical Supplies', 'Staff', 'Equipment', 'Blood', 'Medicines']
         },
         military: {
@@ -89,7 +101,7 @@ class NewsService {
             needs: ['Security', 'Emergency Response', 'Evacuation Support']
         },
         humanitarian: {
-            keywords: ['مساعدات', 'إغاثة', 'إجلاء', 'مأوى', 'مخيم', 'طعام', 'ماء', 'دواء'],
+            keywords: ['مساعدات', 'إغاثة', 'إجلاء', 'مأوى', 'مخيم', 'طعام', 'ماء', 'دواء', 'ملابس', 'إيواء', 'إغاثة إنسانية', 'مساعدات إنسانية', 'مساعدات طبية', 'مساعدات غذائية', 'المساعدات'],
             needs: ['Food', 'Water', 'Shelter', 'Medical Supplies', 'Clothing']
         },
         food: {
@@ -185,11 +197,19 @@ class NewsService {
             }
         }
 
-        // Fallback: if about Gaza and civilian, but no specific location, use Gaza center
-        if (!location && content.includes('غزة') && this.civilianKeywords.some(keyword => content.includes(keyword))) {
-            location = [31.5017, 34.4668];
-            type = ReliefLocationType.OTHER;
-            needs = ['Medical Supplies', 'Food', 'Water', 'Shelter'];
+        // Fallback: if civilian-focused but no specific location, use Gaza center
+        if (!location && this.civilianKeywords.some(keyword => content.includes(keyword))) {
+            location = [31.5017, 34.4668];  // Gaza center coordinates
+            type = ReliefLocationType.SUPPLIES;  // Default to supplies since it's about aid
+            needs = ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];  // Include security due to targeting
+            placeName = 'غزة';  // Default to Gaza
+
+            // Add a small random offset to avoid exact overlap
+            // const jitter = () => (Math.random() - 0.5) * 0.01; // ~1km jitter
+            // location = [31.5017 + jitter(), 34.4668 + jitter()];
+            // type = ReliefLocationType.SUPPLIES;
+            // needs = ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];
+            // placeName = 'غزة';
         }
 
         // Check for context keywords to enhance type and needs
