@@ -109,20 +109,26 @@ export class LocationService {
                     const existingLocation = this.locations.get(locationKey);
 
                     if (existingLocation) {
+                        // Add the update to the newsUpdates array
+                        existingLocation.newsUpdates = [
+                            ...(existingLocation.newsUpdates || []),
+                            // Only add if not already present
+                            ...(
+                                existingLocation.newsUpdates?.some(
+                                    n => n.content === update.content && n.time === update.time
+                                ) ? [] : [{ time: update.time, content: update.content, link: update.link }]
+                            )
+                        ];
                         // Update existing location
-                        const updatedLocation: ReliefLocation = {
-                            ...existingLocation,
-                            status: status || existingLocation.status,
-                            lastUpdated: new Date(),
-                            needs: this.mergeNeeds(
-                                existingLocation.needs || [], 
-                                needs || []
-                            ),
-                            description: this.updateDescription(existingLocation.description, update.content)
-                        };
-                        this.locations.set(locationKey, updatedLocation);
+                        existingLocation.status = status || existingLocation.status;
+                        existingLocation.lastUpdated = new Date();
+                        existingLocation.needs = this.mergeNeeds(
+                            existingLocation.needs || [], 
+                            needs || []
+                        );
+                        this.locations.set(locationKey, existingLocation);
                     } else {
-                        // Create new location
+                        // Create new location with newsUpdates array
                         const newLocation: ReliefLocation = {
                             id: crypto.randomUUID(),
                             name: this.generateLocationName(location, type || ReliefLocationType.OTHER),
@@ -130,7 +136,7 @@ export class LocationService {
                             type: type || ReliefLocationType.OTHER,
                             status: status || LocationStatus.ACTIVE,
                             lastUpdated: new Date(),
-                            description: update.content,
+                            newsUpdates: [{ time: update.time, content: update.content, link: update.link }],
                             needs: needs || [],
                         };
                         this.locations.set(locationKey, newLocation);

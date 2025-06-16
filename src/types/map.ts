@@ -34,6 +34,7 @@ export interface ReliefLocation {
     capacity?: number;
     needs?: string[];
     contactInfo?: string;
+    newsUpdates?: Array<{ time: string; content: string; link?: string }>;
 }
 
 export interface MapControlsProps {
