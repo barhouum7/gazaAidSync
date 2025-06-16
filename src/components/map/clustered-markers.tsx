@@ -212,18 +212,27 @@ const ClusteredCustomMarkers = ({ locations, onMarkerClick }: ClusteredCustomMar
 
     // Add or update markers
     locations.forEach((location) => {
+      location.newsUpdates?.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      
       if (!markersRef.current.has(location.id)) {
         const marker = L.marker(location.location as L.LatLngExpression, {
           icon: getCustomIcon(location),
           locationData: location
         });
 
+        // Only show the latest news update in the popup
+        const latestUpdate = location.newsUpdates?.[0];
+
         // Create popup content
         const popupContent = `
           <div class="marker-popup p-3">
             <h3 class="text-lg font-semibold mb-2">${location.name}</h3>
-            ${location.description ? `
-              <p class="text-sm text-gray-600 mb-2">${location.description}</p>
+            ${latestUpdate ? `
+              <div style="font-size: 0.9em; color: #888;">${latestUpdate.time}</div>
+              <div style="font-size: 1em; margin-bottom: 0.2em;">
+                ${latestUpdate.content}
+              </div>
+              ${latestUpdate.link ? `<a href="${latestUpdate.link}" target="_blank" style="font-size:0.85em; color:#007bff;">رابط الخبر</a>` : ''}
             ` : ''}
             <div class="flex items-center gap-2">
               <span class="px-2 py-1 rounded-full text-xs ${
