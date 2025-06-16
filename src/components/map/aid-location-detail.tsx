@@ -6,10 +6,19 @@ import {
     // Users, 
     Phone, AlertTriangle, CheckCircle, 
     // XCircle, 
-    HelpCircle, X 
+    HelpCircle, X,
+    Newspaper
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from '../ui/button';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface AidLocationDetailProps {
     location: ReliefLocation;
@@ -40,63 +49,94 @@ const AidLocationDetail = ({ location, onClose }: AidLocationDetailProps) => {
     const statusConfig = getStatusIcon(location.status);
 
     return (
-        <Card className="absolute top-4 left-4 w-80 z-[1000] bg-white/95 backdrop-blur-sm">
-            <div className="p-4">
-                <div className="flex items-start justify-between">
-                    <h3 className="text-lg font-bold">{location.name}</h3>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={onClose}
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center justify-between">
+                        <span>{location.name}</span>
+                        <DialogClose asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <span className="sr-only">Close</span>
+                                <HelpCircle className="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
+                    </DialogTitle>
+                </DialogHeader>
 
-                <div className="mt-4 space-y-4">
-                    <Badge className={`flex items-center gap-1 ${statusConfig.color}`}>
-                        {statusConfig.icon}
-                        {location.status}
-                    </Badge>
+                <ScrollArea className="max-h-[60vh] pr-4">
+                    <div className="space-y-4">
+                        <Badge className={`flex items-center gap-1 ${statusConfig.color}`}>
+                            {statusConfig.icon}
+                            {location.status}
+                        </Badge>
 
-                    {location.description && (
-                        <p className="text-sm text-gray-600">
-                            {location.description}
-                        </p>
-                    )}
-
-                    {location.needs && location.needs.length > 0 && (
-                        <div className="space-y-2">
-                            <h4 className="text-sm font-medium">Current Needs:</h4>
-                            <div className="flex flex-wrap gap-1">
-                                {location.needs.map((need, index) => (
-                                    <Badge
-                                        key={index}
-                                        variant="outline"
-                                        className="text-xs"
-                                    >
-                                        {need}
-                                    </Badge>
-                                ))}
+                        {location.needs && location.needs.length > 0 && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium">Current Needs:</h4>
+                                <div className="flex flex-wrap gap-1">
+                                    {location.needs.map((need, index) => (
+                                        <Badge
+                                            key={index}
+                                            variant="outline"
+                                            className="text-xs"
+                                        >
+                                            {need}
+                                        </Badge>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {location.contactInfo && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Phone className="h-4 w-4" />
-                            {location.contactInfo}
-                        </div>
-                    )}
+                        {location.contactInfo && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Phone className="h-4 w-4" />
+                                {location.contactInfo}
+                            </div>
+                        )}
 
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <Clock className="h-3 w-3" />
-                        Updated {formatDistanceToNow(new Date(location.lastUpdated), { addSuffix: true })}
+                        {location.newsUpdates && location.newsUpdates.length > 0 && (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                    <Newspaper className="h-4 w-4" />
+                                    Latest Updates
+                                </div>
+                                <div className="space-y-3">
+                                    {location.newsUpdates.map((update, index) => (
+                                        <div 
+                                            key={index}
+                                            className="p-3 bg-gray-50 dark:bg-card
+                                            rounded-lg space-y-2"
+                                        >
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                {update.time}
+                                            </div>
+                                            <div className="text-sm">
+                                                {update.content}
+                                            </div>
+                                            {update.link && (
+                                                <a 
+                                                    href={update.link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs text-blue-600 hover:underline"
+                                                >
+                                                    Read more
+                                                </a>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <Clock className="h-3 w-3" />
+                            Updated {formatDistanceToNow(new Date(location.lastUpdated), { addSuffix: true })}
+                        </div>
                     </div>
-                </div>
-            </div>
-        </Card>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
     );
 };
 
