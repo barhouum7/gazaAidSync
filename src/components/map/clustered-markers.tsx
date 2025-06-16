@@ -10,6 +10,19 @@ interface ClusteredCustomMarkersProps {
   onMarkerClick: (location: ReliefLocation) => void;
 }
 
+const isValidLocation = (location: any): location is ReliefLocation => {
+  return (
+    location &&
+    typeof location === 'object' &&
+    'id' in location &&
+    'location' in location &&
+    Array.isArray(location.location) &&
+    location.location.length === 2 &&
+    typeof location.location[0] === 'number' &&
+    typeof location.location[1] === 'number'
+  );
+};
+
 const ClusteredCustomMarkers = ({ locations, onMarkerClick }: ClusteredCustomMarkersProps) => {
   const map = useMap();
   const markerClusterRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -200,90 +213,131 @@ const ClusteredCustomMarkers = ({ locations, onMarkerClick }: ClusteredCustomMar
 
   // Update markers when locations change
   useEffect(() => {
-    if (!markerClusterRef.current) return;
+    if (!markerClusterRef.current || !map) return;
 
-    // Remove markers that are no longer in the locations array
-    markersRef.current.forEach((marker, id) => {
-      if (!locations.find(loc => loc.id === id)) {
-        markerClusterRef.current?.removeLayer(marker);
-        markersRef.current.delete(id);
-      }
-    });
+    try {
+      // Remove markers that are no longer in the locations array
+      markersRef.current.forEach((marker, id) => {
+        if (!locations.find(loc => loc.id === id)) {
+          markerClusterRef.current?.removeLayer(marker);
+          markersRef.current.delete(id);
+        }
+      });
 
-    // Add or update markers
-    locations.forEach((location) => {
-      location.newsUpdates?.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      
-      if (!markersRef.current.has(location.id)) {
-        const marker = L.marker(location.location as L.LatLngExpression, {
-          icon: getCustomIcon(location),
-          locationData: location
-        });
+      // Add or update markers
+      locations.forEach((location) => {
+        // Validate location data
+        if (!isValidLocation(location)) {
+          console.warn('Invalid location data:', location);
+          return;
+        }
 
-        // Only show the latest news update in the popup
-        const latestUpdate = location.newsUpdates?.[0];
+        try {
+          // Sort news updates safely
+          if (location.newsUpdates) {
+            location.newsUpdates.sort((a, b) => {
+              try {
+                return new Date(b.time).getTime() - new Date(a.time).getTime();
+              } catch (error) {
+                console.warn('Error sorting news updates:', error);
+                return 0;
+              }
+            });
+          }
+          
+          if (!markersRef.current.has(location.id)) {
+            const marker = L.marker(location.location as L.LatLngExpression, {
+              icon: getCustomIcon(location),
+              locationData: location
+            });
 
-        // Create popup content
-        const popupContent = `
-          <div class="marker-popup p-3">
-            <h3 class="text-lg font-semibold mb-2">${location.name}</h3>
-            ${latestUpdate ? `
-              <div style="font-size: 0.9em; color: #888;">${latestUpdate.time}</div>
-              <div style="font-size: 1em; margin-bottom: 0.2em;">
-                ${latestUpdate.content}
+            // Only show the latest news update in the popup
+            const latestUpdate = location.newsUpdates?.[0];
+
+            // Create popup content with safe string interpolation
+            const popupContent = `
+              <div class="marker-popup p-3">
+                <h3 class="text-lg font-semibold mb-2">${location.name || 'Unnamed Location'}</h3>
+                ${latestUpdate ? `
+                  <div style="font-size: 0.9em; color: #888;">${latestUpdate.time || ''}</div>
+                  <div style="font-size: 1em; margin-bottom: 0.2em;">
+                    ${latestUpdate.content || ''}
+                  </div>
+                  ${latestUpdate.link ? `<a href="${latestUpdate.link}" target="_blank" style="font-size:0.85em; color:#007bff;">رابط الخبر</a>` : ''}
+                ` : ''}
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-1 rounded-full text-xs ${
+                    location.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                    location.status === 'NEEDS_SUPPORT' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }">${location.status || 'UNKNOWN'}</span>
+                </div>
               </div>
-              ${latestUpdate.link ? `<a href="${latestUpdate.link}" target="_blank" style="font-size:0.85em; color:#007bff;">رابط الخبر</a>` : ''}
-            ` : ''}
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-1 rounded-full text-xs ${
-                location.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                location.status === 'NEEDS_SUPPORT' ? 'bg-red-100 text-red-800' :
-                'bg-yellow-100 text-yellow-800'
-              }">${location.status}</span>
-            </div>
-          </div>
-        `;
+            `;
 
-        const popup = L.popup({
-          maxWidth: 300,
-          className: 'custom-popup',
-          closeButton: false,
-          autoClose: false,
-          closeOnClick: false,
-          closeOnEscapeKey: false
-        }).setContent(popupContent);
+            const popup = L.popup({
+              maxWidth: 300,
+              className: 'custom-popup',
+              closeButton: false,
+              autoClose: false,
+              closeOnClick: false,
+              closeOnEscapeKey: false
+            }).setContent(popupContent);
 
-        marker.bindPopup(popup);
+            marker.bindPopup(popup);
 
-        // Show popup on hover
-        marker.on('mouseover', () => {
-          marker.openPopup();
-        });
+            // Show popup on hover with debounce
+            let hoverTimeout: NodeJS.Timeout;
+            marker.on('mouseover', () => {
+              clearTimeout(hoverTimeout);
+              hoverTimeout = setTimeout(() => {
+                marker.openPopup();
+              }, 100);
+            });
 
-        // Hide popup on mouseout
-        marker.on('mouseout', () => {
-          marker.closePopup();
-        });
+            // Hide popup on mouseout with debounce
+            marker.on('mouseout', () => {
+              clearTimeout(hoverTimeout);
+              hoverTimeout = setTimeout(() => {
+                marker.closePopup();
+              }, 100);
+            });
 
-        // Handle click events
-        marker.on('click', () => {
-          onMarkerClick(location);
-        });
+            // Handle click events
+            marker.on('click', () => {
+              try {
+                onMarkerClick(location);
+              } catch (error) {
+                console.error('Error handling marker click:', error);
+              }
+            });
 
-        // Add click handler to map to close popups when clicking outside
-        map.on('click', () => {
+            markerClusterRef.current?.addLayer(marker);
+            markersRef.current.set(location.id, marker);
+          }
+        } catch (error) {
+          console.error('Error creating marker:', error, location);
+        }
+      });
+
+      // Add click handler to map to close popups when clicking outside
+      const handleMapClick = () => {
+        try {
           map.closePopup();
-        });
+        } catch (error) {
+          console.error('Error closing popup:', error);
+        }
+      };
 
-        markerClusterRef?.current?.addLayer(marker);
-        markersRef.current.set(location.id, marker);
-      }
-    });
+      map.on('click', handleMapClick);
 
-    // Cleanup map click handler
-    return () => {
-      map.off('click');
-    };
+      // Cleanup
+      return () => {
+        map.off('click', handleMapClick);
+      };
+    } catch (error) {
+      console.error('Error updating markers:', error);
+    }
   }, [locations, onMarkerClick, getCustomIcon, map]);
 
   return null;
