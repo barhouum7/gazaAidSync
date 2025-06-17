@@ -12,6 +12,7 @@ generator client {
 
 model AidPoint {
     id          String @id @default(cuid())
+    newsLinkId  String? @unique // Added for linking to news updates and upserting
     name        String
     latitude    Float
     longitude   Float
@@ -19,6 +20,9 @@ model AidPoint {
     ngoLink     String
     category    String   // e.g., "hospital", "shelter", "aid_distribution"
     status      String   // e.g., "critical", "needs_supplies", "operational"
+    description String?
+    contactInfo     String? // Optional contact information
+    capacity     Int? // Optional capacity for shelters or hospitals
     lastUpdated DateTime @default(now())
     createdAt   DateTime @default(now())
 
