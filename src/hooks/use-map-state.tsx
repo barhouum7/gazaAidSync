@@ -9,9 +9,7 @@ export const useMapState = () => {
     const [selectedLocation, setSelectedLocation] = useState<ReliefLocation | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeFilters, setActiveFilters] = useState<ReliefLocationType[]>(
-        Object.values(ReliefLocationType)
-    );
+    const [activeFilters, setActiveFilters] = useState<ReliefLocationType[]>(Object.values(ReliefLocationType));
 
     // Load initial data
     useEffect(() => {
@@ -29,6 +27,25 @@ export const useMapState = () => {
 
         loadLocations();
     }, []);
+
+
+    const fetchLocations = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const fetchedLocations = await locationService.getLocations(); // Now fetches from DB
+            setLocations(fetchedLocations);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch locations');
+            console.error('Error fetching locations:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchLocations();
+    }, [fetchLocations]);
 
     const addLocation = useCallback(async (location: Omit<ReliefLocation, 'id'>) => {
         const tempId = crypto.randomUUID();
@@ -90,23 +107,28 @@ export const useMapState = () => {
         throw lastError;
     }, []);
 
+    // Filtered locations will be handled in the Map component based on selectedDate
     const filteredLocations = useMemo(() => {
-        const filtered = locations.filter(location => activeFilters.includes(location.type));
-        // console.log('[FROM useMapState: ] Filtered locations:', filtered);
-        return filtered;
+        // This memoization might be redundant if the Map component also filters
+        // but it's good to keep if useMapState also needs its own filtered list.
+        return locations.filter(location => activeFilters.includes(location.type));
     }, [locations, activeFilters]);
 
+
     return {
-        locations: filteredLocations,
+        locations, // Now directly from the DB via locationService
         selectedLocation,
         loading,
+        setLoading,
+        setError,
         error,
         activeFilters,
         setSelectedLocation,
         setActiveFilters,
-        addLocation,
         updateLocation,
         removeLocation,
-        retryOperation
+        retryOperation,
+        // Expose fetchLocations so Map component can refresh
+        fetchLocations,
     };
 };
