@@ -71,6 +71,7 @@ export class LocationService {
     private static instance: LocationService;
     private locations: Map<string, ReliefLocation> = new Map();
     private lastUpdate: Date | null = null;
+    private lastLocations: ReliefLocation[] = [];
 
     private constructor() {}
 
@@ -95,67 +96,44 @@ export class LocationService {
 
     async getLocations(): Promise<ReliefLocation[]> {
         const now = new Date();
-        if (!this.lastUpdate || 
-            now.getTime() - this.lastUpdate.getTime() > 5 * 60 * 1000) {
-            
+        if (!this.lastUpdate || now.getTime() - this.lastUpdate.getTime() > 5 * 60 * 1000) {
             const updates = await newsService.getLatestUpdates();
+            const locations: ReliefLocation[] = [];
+            const usedCoords = new Set<string>();
             
-            // Process each news update
             for (const update of updates) {
-                const { location, type, needs, status, placeName } = newsService.extractLocationInfo(update.content);
+                let { location } = newsService.extractLocationInfo(update.content);
+                const { type, needs, status, placeName } = newsService.extractLocationInfo(update.content);
                 
                 if (location) {
-                    const locationKey = this.getLocationKey(location, placeName);
-                    const existingLocation = this.locations.get(locationKey);
-
-                    if (existingLocation) {
-                        // Add the update to the newsUpdates array
-                        existingLocation.newsUpdates = [
-                            ...(existingLocation.newsUpdates || []),
-                            // Only add if not already present
-                            ...(
-                                existingLocation.newsUpdates?.some(
-                                    n => n.content === update.content && n.time === update.time
-                                ) ? [] : [{ time: update.time, content: update.content, link: update.link }]
-                            )
-                        ];
-                        // Update existing location
-                        existingLocation.status = status || existingLocation.status;
-                        existingLocation.lastUpdated = new Date();
-                        existingLocation.needs = this.mergeNeeds(
-                            existingLocation.needs || [], 
-                            needs || []
-                        );
-                        this.locations.set(locationKey, existingLocation);
-                    } else {
-                        // Create new location with newsUpdates array
-                        const newLocation: ReliefLocation = {
-                            id: crypto.randomUUID(),
-                            name: this.generateLocationName(location, type || ReliefLocationType.OTHER),
-                            location,
-                            type: type || ReliefLocationType.OTHER,
-                            status: status || LocationStatus.ACTIVE,
-                            lastUpdated: new Date(),
-                            newsUpdates: [{ time: update.time, content: update.content, link: update.link }],
-                            needs: needs || [],
-                        };
-                        this.locations.set(locationKey, newLocation);
+                    // If these coordinates are already used, apply jitter
+                    let coordKey = `${location[0]},${location[1]}`;
+                    while (usedCoords.has(coordKey)) {
+                        // Apply jitter of up to ~0.003 deg (~300m)
+                        const jitter = () => (Math.random() - 0.5) * 0.006;
+                        location = [location[0] + jitter(), location[1] + jitter()];
+                        coordKey = `${location[0]},${location[1]}`;
                     }
+                    usedCoords.add(coordKey);
+    
+                    locations.push({
+                        id: crypto.randomUUID(),
+                        name: this.generateLocationName(location as LatLngTuple, type || ReliefLocationType.OTHER),
+                        location: location as LatLngTuple,
+                        type: type || ReliefLocationType.OTHER,
+                        status: status || LocationStatus.ACTIVE,
+                        lastUpdated: new Date(),
+                        newsUpdates: [{ time: update.time, content: update.content, link: update.link }],
+                        needs: needs || [],
+                    });
                 }
             }
-
-            // Remove locations that haven't been updated in the last 24 hours
-            const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            for (const [key, location] of this.locations.entries()) {
-                if (location.lastUpdated < oneDayAgo) {
-                    this.locations.delete(key);
-                }
-            }
-
+            // Remove locations that haven't been updated in the last 24 hours (not needed since each is new)
             this.lastUpdate = now;
+            this.lastLocations = locations;
+            return locations;
         }
-
-        return Array.from(this.locations.values());
+        return this.lastLocations;
     }
 
     private mergeNeeds(existingNeeds: string[], newNeeds: string[]): string[] {
