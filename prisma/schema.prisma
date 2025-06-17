@@ -12,7 +12,7 @@ generator client {
 
 model AidPoint {
     id          String @id @default(cuid())
-    newsLinkId  String? @unique // Added for linking to news updates and upserting
+    newsLinkId  String @unique // Added for linking to news updates and upserting
     name        String
     latitude    Float
     longitude   Float
