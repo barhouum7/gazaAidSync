@@ -4,6 +4,10 @@ interface AlJazeeraUpdate {
     time: string;
     link: string;
     content: string;
+    source?: string;
+    type?: 'urgent' | 'update' | 'news' | 'trending';
+    parsedTime?: number;
+    hasVideo?: boolean;
 }
 
 interface AlJazeeraResponse {
@@ -13,8 +17,13 @@ interface AlJazeeraResponse {
     };
     blogs: AlJazeeraUpdate[];
     news: Array<{
-        link: string;
         title: string;
+        link: string;
+        postExcerpt: string;
+    }>;
+    trending: Array<{
+        title: string;
+        link: string;
     }>;
 }
 
@@ -33,7 +42,10 @@ class NewsService {
         'الجيش', 'إطلاق نار', 'عملية عسكرية', 'توغل', 'دبابة', 'صاروخ', 'مروحية', 'طائرة حربية',
         'مستوطنة', 'مستوطنين', 'مستوطن', 'إسرائيليون', 'إسرائيليين',
         'جنود الاحتلال', 'قوات إسرائيلية', 'قوات خاصة', 'قوات عسكرية', 'موقع عسكري', 'مواقع عسكرية',
-        'مقتل ضابط', 'إصابة ضابط', 'ضابط إسرائيلي', 'ضباط إسرائيليين',
+        'مقتل ضابط', 'إصابة ضابط', 'ضابط إسرائيلي', 'ضباط إسرائيليين', 'ضباط إسرائيليين', 'قادة عسكريين', 'قادة إسرائيليين',
+        'قادة جيش', 'قادة قوات', 'قادة الاحتلال', 'قادة عسكريين إسرائيليين', 'قادة جيش إسرائيلي', 'قادة قوات الاحتلال',
+        'قادة جيش الاحتلال', 'قادة جيش إسرائيليين', 'قادة قوات الاحتلال الإسرائيلي', 'قادة قوات الاحتلال الإسرائيلية',
+        'عسكري', 'قائد', 'جندي'
     ];
 
     // Civilian/humanitarian focus keywords
@@ -50,15 +62,13 @@ class NewsService {
         const isMilitary = this.excludeKeywords.some(keyword => content.includes(keyword));
         const isCivilian = this.civilianKeywords.some(keyword => content.includes(keyword));
         const hasLocation = Object.keys(this.locationMap).some(loc => content.includes(loc));
-        // const hasGazaContext = content.includes('غزة') || content.includes('قطاع غزة');
-        
+        const hasGazaContext = content.includes('غزة') || content.includes('قطاع غزة');
+    
         // Allow if:
-        // 1. It's civilian-focused (even if it has military terms), OR
-        // 2. It's not purely military (contains some civilian terms), OR
-        // 3. It mentions a specific location (even if military-focused)
-        return isCivilian || // Allow any civilian-focused update
-            (!isMilitary && hasLocation) || 
-            hasLocation;
+        // 1. It's civilian-focused AND mentions Gaza (or a mapped location)
+        // 2. It mentions a specific location (even if military-focused)
+        return (isCivilian && (hasGazaContext || hasLocation))
+            || hasLocation;
     }
 
     // Expanded location mapping for Gaza
@@ -67,7 +77,14 @@ class NewsService {
         type: ReliefLocationType;
         defaultNeeds: string[];
     }> = {
-        'غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
+        'غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.SUPPLIES, defaultNeeds: ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'] },
+        'قطاع غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
+        'جنوب قطاع غزة': { coordinates: [31.2968, 34.2425], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
+        'بجنوب قطاع غزة': { coordinates: [31.2968, 34.2425], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
+        'شمال قطاع غزة': { coordinates: [31.5367, 34.4983], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water', 'Blankets'] },
+        'شمال غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
+        'وسط قطاع غزة': { coordinates: [31.4170, 34.3500], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food'] },
+        'مدينة غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
         'خان يونس': { coordinates: [31.3452, 34.3037], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
         'رفح': { coordinates: [31.2968, 34.2435], type: ReliefLocationType.SUPPLIES, defaultNeeds: ['Food', 'Water', 'Shelter'] },
         'دير البلح': { coordinates: [31.4170, 34.3500], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food'] },
@@ -116,7 +133,7 @@ class NewsService {
 
     private readonly severityKeywords = {
         high: {
-            keywords: ['قتل', 'استشهاد', 'قصف', 'اشتباك', 'كمين', 'دمار', 'تدمير'],
+            keywords: ['قتل', 'استشهاد', 'قصف', 'دمار', 'تدمير', 'انفجار', 'هجوم', 'غارة', 'قصف جوي', 'قصف مدفعي', 'قصف صاروخي'],
             status: LocationStatus.NEEDS_SUPPORT
         },
         medium: {
@@ -164,10 +181,68 @@ class NewsService {
             this.lastUpdate = now;
         }
     
-        const allUpdates = this.cachedData?.blogs || [];
-        const filtered = allUpdates.filter(update => this.shouldInclude(update.content));
-        console.log('All updates:', allUpdates.map(u => u.content));
-        console.log('Filtered updates:', filtered.map(u => u.content));
+        // Process all types of updates
+        const allUpdates: AlJazeeraUpdate[] = [
+            // Live blog updates
+            ...(this.cachedData?.blogs || []),
+            
+            // Themed news
+            ...(this.cachedData?.news?.map(item => ({
+                time: 'أخبار',
+                link: item.link,
+                content: `${item.title} - ${item.postExcerpt}`,
+                source: 'الجزيرة',
+                type: 'news' as const, // Type assertion to ensure literal type
+                parsedTime: 0 // Add default parsedTime
+            })) || []),
+            
+            // Trending news
+            ...(this.cachedData?.trending?.map(item => ({
+                time: 'شائع',
+                link: item.link,
+                content: item.title,
+                source: 'الجزيرة',
+                type: 'trending' as const, // Type assertion to ensure literal type
+                parsedTime: 0 // Add default parsedTime
+            })) || [])
+        ];
+
+        // Sort updates by time (if available) and type
+        const sortedUpdates = allUpdates.sort((a, b) => {
+            // First sort by type priority
+            const typePriority = {
+                'urgent': 0,
+                'update': 1,
+                'news': 2,
+                'trending': 3
+            };
+            
+            const typeDiff = (typePriority[a.type || 'news'] || 0) - (typePriority[b.type || 'news'] || 0);
+            if (typeDiff !== 0) return typeDiff;
+
+            // Then sort by parsed time if available
+            if (a.parsedTime && b.parsedTime) {
+                return a.parsedTime - b.parsedTime;
+            }
+
+            // Finally, sort by time string
+            return a.time.localeCompare(b.time);
+        });
+
+        // Filter updates based on content
+        const filtered = sortedUpdates.filter(update => this.shouldInclude(update.content));
+        
+        console.log('All updates:', allUpdates.map(u => ({
+            content: u.content,
+            type: u.type,
+            time: u.time
+        })));
+        console.log('Filtered updates:', filtered.map(u => ({
+            content: u.content,
+            type: u.type,
+            time: u.time
+        })));
+
         return filtered;
     }
 
@@ -186,9 +261,14 @@ class NewsService {
         let severity: 'high' | 'medium' | 'low' = 'low';
         let placeName: string | undefined;
 
+
+        // Sort location keys by length (desc) to match the most specific location first
+        const sortedLocations = Object.keys(this.locationMap).sort((a, b) => b.length - a.length);
+        
         // Try to match the most specific location name
-        for (const [loc, info] of Object.entries(this.locationMap)) {
+        for (const loc of sortedLocations) {
             if (content.includes(loc)) {
+                const info = this.locationMap[loc];
                 location = info.coordinates;
                 type = info.type;
                 needs = [...info.defaultNeeds];
@@ -197,19 +277,22 @@ class NewsService {
             }
         }
 
+        // If no specific location matched, check for general keywords
+        const hasGazaContext = content.includes('غزة') || content.includes('قطاع غزة');
+
         // Fallback: if civilian-focused but no specific location, use Gaza center
-        if (!location && this.civilianKeywords.some(keyword => content.includes(keyword))) {
-            location = [31.5017, 34.4668];  // Gaza center coordinates
-            type = ReliefLocationType.SUPPLIES;  // Default to supplies since it's about aid
-            needs = ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];  // Include security due to targeting
-            placeName = 'غزة';  // Default to Gaza
+        if (!location && this.civilianKeywords.some(keyword => content.includes(keyword)) && hasGazaContext) {
+            // location = [31.5017, 34.4668];  // Gaza center coordinates
+            // type = ReliefLocationType.SUPPLIES;  // Default to supplies since it's about aid
+            // needs = ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];  // Include security due to targeting
+            // placeName = 'غزة';  // Default to Gaza
 
             // Add a small random offset to avoid exact overlap
-            // const jitter = () => (Math.random() - 0.5) * 0.01; // ~1km jitter
-            // location = [31.5017 + jitter(), 34.4668 + jitter()];
-            // type = ReliefLocationType.SUPPLIES;
-            // needs = ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];
-            // placeName = 'غزة';
+            const jitter = () => (Math.random() - 0.5) * 0.01; // ~1km jitter
+            location = [31.5017 + jitter(), 34.4668 + jitter()];
+            type = ReliefLocationType.SUPPLIES;
+            needs = ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];
+            placeName = 'غزة';
         }
 
         // Check for context keywords to enhance type and needs
@@ -222,9 +305,12 @@ class NewsService {
             }
         }
 
+        // Check if the content is military-focused
+        const isMilitaryFocused = this.excludeKeywords.some(keyword => content.includes(keyword));
+
         // Check for severity
         for (const [sev, info] of Object.entries(this.severityKeywords)) {
-            if (info.keywords.some(keyword => content.includes(keyword))) {
+            if (info.keywords.some(keyword => content.includes(keyword)) && hasGazaContext && !isMilitaryFocused) {
                 severity = sev as 'high' | 'medium' | 'low';
                 status = info.status;
                 break;
