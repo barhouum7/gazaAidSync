@@ -35,6 +35,7 @@ export interface ReliefLocation {
     needs?: string[];
     contactInfo?: string;
     newsUpdates?: Array<{ time: string; content: string; link?: string }>;
+    ngoLink?: string;
 }
 
 export interface MapControlsProps {
