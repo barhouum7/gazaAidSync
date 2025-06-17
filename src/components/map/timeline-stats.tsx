@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { ReliefLocationType } from '@/types/map';
 import { locationService } from '@/lib/services/location-service';
-import { addDays, format } from 'date-fns';
+import { addDays, format, isSameDay } from 'date-fns';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,9 +23,10 @@ const TimelineStats = ({ selectedDate, totalLocations, filteredLocations }: Time
         const fetchStats = async () => {
             setLoading(true);
             try {
-                const timelineStats = await locationService.getTimelineStats(7);
-                const todayStats = timelineStats.find(s => s.date === format(selectedDate, 'yyyy-MM-dd'));
-                const yesterdayStats = timelineStats.find(s => s.date === format(addDays(selectedDate, -1), 'yyyy-MM-dd'));
+                // Fetch stats for the last 7 days from the DB
+                const timelineStatsData = await locationService.getTimelineStats(7);
+                const todayStats = timelineStatsData.find(s => isSameDay(new Date(s.date), selectedDate));
+                const yesterdayStats = timelineStatsData.find(s => isSameDay(new Date(s.date), addDays(selectedDate, -1)));
                 
                 setStats({
                     today: todayStats,
@@ -42,7 +43,7 @@ const TimelineStats = ({ selectedDate, totalLocations, filteredLocations }: Time
         };
 
         fetchStats();
-    }, [selectedDate]);
+    }, [selectedDate]); // Re-fetch stats when selected date changes
 
     if (loading) {
         return (
@@ -54,7 +55,7 @@ const TimelineStats = ({ selectedDate, totalLocations, filteredLocations }: Time
         );
     }
 
-    if (!stats) return null;
+    if (!stats || !stats.today) return null; // Ensure stats.today exists before rendering
 
     const getChangeIcon = (change: number) => {
         if (change > 0) return <TrendingUp className="h-4 w-4 text-green-600" />;
