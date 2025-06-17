@@ -1,0 +1,23 @@
+name: Scheduled Data Ingestion
+
+on:
+    schedule:
+        # Runs every hour.
+        - cron: '0 * * * *'
+    workflow_dispatch: # Allows manual trigger from the Actions tab
+
+jobs:
+  ingest-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call ingestion endpoint
+        env:
+            INGEST_URL: ${{ secrets.INGEST_URL }}
+            INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
+        run: |
+          echo "Ingestion Cron job triggered at $(date)"
+          # A POST request to the ingestion endpoint
+          curl -X POST "$INGEST_URL" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $INGEST_SECRET"
+          echo "Ingestion job completed at $(date)"
