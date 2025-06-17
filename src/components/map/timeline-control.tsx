@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils';
 interface TimelineControlProps {
     onDateChange: (date: Date) => void;
     selectedDate: Date;
-    totalLocations: number;
-    filteredLocations: number;
+    totalLocations: number; // Now reflects total in DB
+    filteredLocations: number; // Now reflects locations on selected date
 }
 
 const TimelineControl = ({ 
@@ -28,6 +28,7 @@ const TimelineControl = ({
     const [timelineRange, setTimelineRange] = useState<'7d' | '30d' | '90d'>('30d');
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today to start of day for consistent comparison
     
     // Calculate timeline range based on selected range
     const timelineConfig = useMemo(() => {
@@ -40,40 +41,46 @@ const TimelineControl = ({
     }, [timelineRange]);
 
     const maxValue = timelineConfig.days;
+
+    // Calculate currentValue relative to today and the max range
     const currentValue = useMemo(() => {
-        const diffTime = Math.abs(today.getTime() - selectedDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return Math.min(diffDays, maxValue);
+        const selectedDateStart = new Date(selectedDate);
+        selectedDateStart.setHours(0, 0, 0, 0); // Normalize selectedDate to start of day
+
+        const diffTime = today.getTime() - selectedDateStart.getTime(); // Difference in milliseconds
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Difference in full days
+        
+        return Math.min(Math.max(0, diffDays), maxValue); // Ensure value is within [0, maxValue]
     }, [selectedDate, today, maxValue]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (isPlaying) {
             interval = setInterval(() => {
-                const newValue = currentValue - 1;
-                if (newValue < 0) {
+                const newDaysAgo = currentValue + 1; // Move forward in time (closer to today)
+                if (newDaysAgo > maxValue) { // If we've reached the "oldest" date
                     setIsPlaying(false);
-                    onDateChange(today);
+                    onDateChange(today); // Reset to today
                 } else {
-                    const newDate = addDays(today, -newValue);
+                    const newDate = addDays(today, -newDaysAgo);
                     onDateChange(newDate);
                 }
             }, 1000 / playbackSpeed);
         }
         return () => clearInterval(interval);
-    }, [isPlaying, playbackSpeed, currentValue, onDateChange, today]);
+    }, [isPlaying, playbackSpeed, currentValue, onDateChange, today, maxValue]); // Added maxValue to dependencies
 
-    const handleSliderChange = (newValue: number) => {
-        const selectedDate = addDays(today, -newValue);
+    const handleSliderChange = (newDaysAgo: number) => {
+        const selectedDate = addDays(today, -newDaysAgo);
         onDateChange(selectedDate);
     };
 
     const handleSkipToStart = () => {
-        onDateChange(addDays(today, -maxValue));
+        onDateChange(addDays(today, -maxValue)); // Go to the oldest date in current range
     };
 
     const handleSkipToEnd = () => {
-        onDateChange(today);
+        onDateChange(today); // Go to today
     };
 
     const handleReset = () => {
@@ -82,22 +89,27 @@ const TimelineControl = ({
     };
 
     const formatDateRange = (date: Date) => {
-        if (timelineRange === '7d') {
-            return format(date, 'MMM d');
-        } else if (timelineRange === '30d') {
-            return format(date, 'MMM d');
-        } else {
-            return format(date, 'MMM d, yyyy');
-        }
+        // Use the actual year for 90d range, otherwise just month/day
+        return format(date, timelineRange === '90d' ? 'MMM d, yyyy' : 'MMM d');
     };
 
     const getDateLabel = (date: Date) => {
-        if (isSameDay(date, today)) {
+        const normalizedDate = new Date(date);
+        normalizedDate.setHours(0, 0, 0, 0);
+
+        const normalizedToday = new Date(today);
+        normalizedToday.setHours(0, 0, 0, 0);
+
+        const normalizedYesterday = addDays(new Date(today), -1);
+        normalizedYesterday.setHours(0, 0, 0, 0);
+
+
+        if (isSameDay(normalizedDate, normalizedToday)) {
             return 'Today';
-        } else if (isSameDay(date, addDays(today, -1))) {
+        } else if (isSameDay(normalizedDate, normalizedYesterday)) {
             return 'Yesterday';
         }
-        return formatDateRange(date);
+        return formatDateRange(normalizedDate);
     };
 
     return (
@@ -123,7 +135,7 @@ const TimelineControl = ({
                                             variant="ghost"
                                             size="sm"
                                             onClick={handleSkipToStart}
-                                            disabled={isPlaying}
+                                            disabled={isPlaying || currentValue === maxValue}
                                         >
                                             <SkipBack className="h-4 w-4" />
                                         </Button>
@@ -145,7 +157,7 @@ const TimelineControl = ({
                                             variant="ghost"
                                             size="sm"
                                             onClick={handleSkipToEnd}
-                                            disabled={isPlaying}
+                                            disabled={isPlaying || currentValue === 0}
                                         >
                                             <SkipForward className="h-4 w-4" />
                                         </Button>
@@ -186,7 +198,11 @@ const TimelineControl = ({
                             {/* Range Selector */}
                             <select
                                 value={timelineRange}
-                                onChange={(e) => setTimelineRange(e.target.value as '7d' | '30d' | '90d')}
+                                onChange={(e) => {
+                                    setTimelineRange(e.target.value as '7d' | '30d' | '90d');
+                                    // When range changes, reset selected date to ensure it's within bounds
+                                    onDateChange(today);
+                                }}
                                 className="text-sm bg-transparent border-none focus:outline-none"
                                 disabled={isPlaying}
                             >
@@ -204,7 +220,7 @@ const TimelineControl = ({
                             min={0}
                             max={maxValue}
                             step={timelineConfig.step}
-                            onValueChange={([newValue]) => handleSliderChange(newValue)}
+                            onValueChange={([newDaysAgo]) => handleSliderChange(newDaysAgo)}
                             className="w-full"
                         />
                         
@@ -217,7 +233,7 @@ const TimelineControl = ({
                             )}>
                                 {getDateLabel(selectedDate)}
                             </span>
-                            <span>{formatDateRange(today)}</span>
+                            <span>{getDateLabel(today)}</span>
                         </div>
                     </div>
 
