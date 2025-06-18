@@ -30,7 +30,8 @@ interface AlJazeeraResponse {
 class NewsService {
     private static instance: NewsService;
     // private readonly API_URL = 'https://aljazeera-articles.vercel.app/get-liveblog';
-    private readonly API_URL = '/api/get-liveblog-news';
+    private readonly baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
+    private readonly API_URL = `${this.baseUrl}/api/get-liveblog-news`;
     private lastUpdate: Date | null = null;
     private cachedData: AlJazeeraResponse | null = null;
 

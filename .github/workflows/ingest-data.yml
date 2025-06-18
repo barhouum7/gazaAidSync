@@ -16,7 +16,7 @@ jobs:
             INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
         run: |
           echo "Ingestion Cron job triggered at $(date)"
-          echo "INGEST_URL is: ${INGEST_URL:0:10}..."
+          # echo "INGEST_URL is: ${INGEST_URL:0:10}..."
           curl -X POST "$INGEST_URL" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $INGEST_SECRET"
