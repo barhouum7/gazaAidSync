@@ -39,8 +39,9 @@ export async function POST(req: NextRequest) {
                         where: { newsLinkId: stableId },
                         update: {
                             name: placeName || (typeof location[0] === 'number' && typeof location[1] === 'number'
-                                ? `${type} - ${location[0].toFixed(4)}, ${location[1].toFixed(4)}`
-                                : `Unnamed ${type} Location`),
+                            ? `${type} - ${location[0].toFixed(4)}, ${location[1].toFixed(4)}`
+                            : `Unnamed ${type} Location`),
+                            description: update.content,
                             latitude: location[0],
                             longitude: location[1],
                             needs: JSON.stringify(needs || []), // Store needs as JSON string
@@ -52,8 +53,9 @@ export async function POST(req: NextRequest) {
                         create: {
                             newsLinkId: stableId,
                             name: placeName || (typeof location[0] === 'number' && typeof location[1] === 'number'
-                                ? `${type} - ${location[0].toFixed(4)}, ${location[1].toFixed(4)}`
-                                : `Unnamed ${type} Location`),
+                            ? `${type} - ${location[0].toFixed(4)}, ${location[1].toFixed(4)}`
+                            : `Unnamed ${type} Location`),
+                            description: update.content,
                             latitude: location[0],
                             longitude: location[1],
                             needs: JSON.stringify(needs || []), // Store needs as JSON string
