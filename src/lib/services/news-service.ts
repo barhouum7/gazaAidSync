@@ -72,41 +72,58 @@ class NewsService {
             || hasLocation;
     }
 
-    // Expanded location mapping for Gaza
+    // Updated location mapping for Gaza
     private readonly locationMap: Record<string, { 
         coordinates: [number, number];
         type: ReliefLocationType;
         defaultNeeds: string[];
     }> = {
-        'غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.SUPPLIES, defaultNeeds: ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'] },
-        'قطاع غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
-        'جنوب قطاع غزة': { coordinates: [31.2968, 34.2425], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
-        'بجنوب قطاع غزة': { coordinates: [31.2968, 34.2425], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
-        'شمال قطاع غزة': { coordinates: [31.5367, 34.4983], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water', 'Blankets'] },
-        'شمال غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
-        'وسط قطاع غزة': { coordinates: [31.4170, 34.3500], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food'] },
-        'مدينة غزة': { coordinates: [31.5017, 34.4668], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
+        'غزة': { coordinates: [31.5128679, 34.4581358], type: ReliefLocationType.SUPPLIES, defaultNeeds: ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'] },
+        'قطاع غزة': { coordinates: [31.4432234, 34.360007], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
+        'جنوب قطاع غزة': { coordinates: [31.2710, 34.2455], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
+        'بجنوب قطاع غزة': { coordinates: [31.2710, 34.2455], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
+        'شمال قطاع غزة': { coordinates: [31.5501268, 34.5033134], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water', 'Blankets'] },
+        'شمال غزة': { coordinates: [31.5501268, 34.5033134], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
+        'وسط قطاع غزة': { coordinates: [31.5225078, 34.4482441], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food'] },
+        'مدينة غزة': { coordinates: [31.5050311, 34.4641381], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
+        'مدينة غزة القديمة': { coordinates: [31.5050311, 34.4641381], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water', 'Shelter'] },
         'خان يونس': { coordinates: [31.3452, 34.3037], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
+        'خانيونس': { coordinates: [31.3452, 34.3037], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
         'رفح': { coordinates: [31.2968, 34.2435], type: ReliefLocationType.SUPPLIES, defaultNeeds: ['Food', 'Water', 'Shelter'] },
-        'دير البلح': { coordinates: [31.4170, 34.3500], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food'] },
+        'بيت لاهيا': { coordinates: [31.5506, 34.5000], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
         'جباليا': { coordinates: [31.5367, 34.4983], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water', 'Blankets'] },
+        'مخيم جباليا': { coordinates: [31.5367, 34.4983], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water', 'Blankets'] },
         'بيت حانون': { coordinates: [31.5522, 34.5361], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
-        'النصيرات': { coordinates: [31.4492, 34.3922], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
+        'دير البلح': { coordinates: [31.4183455,34.3502476], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Food'] },
+        'مخيم الشاطئ': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water', 'Blankets'] },
+        'مخيم المغازي': { coordinates: [31.4218351 ,34.3852095], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
+        'مخيم النصيرات': { coordinates: [31.444084, 34.3865377], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
+        'النصيرات': { coordinates: [31.444084, 34.3865377], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
+        'مخيم البريج': { coordinates: [31.4381976, 34.4035751], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
+        'مخيم الشابورة': { coordinates: [31.2968, 34.2435], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
+        'مخيم': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water', 'Blankets'] },
+        'مأوى': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
+        
+        // Hospitals
         'مستشفى الشفاء': { coordinates: [31.5231, 34.4667], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Staff', 'Equipment'] },
         'مستشفى الأوروبي': { coordinates: [31.3450, 34.3030], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Staff', 'Equipment'] },
         'مستشفى ناصر': { coordinates: [31.3400, 34.3030], type: ReliefLocationType.MEDICAL, defaultNeeds: ['Medical Supplies', 'Staff', 'Equipment'] },
-        'مخيم': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water', 'Blankets'] },
-        'مأوى': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.SHELTER, defaultNeeds: ['Shelter', 'Food', 'Water'] },
+
+        // Borders
         'الحدود': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
-        'الحدود مع مصر': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
-        'الحدود مع إسرائيل': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
-        'الحدود مع البحر': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
-        'الحدود البحرية': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
+        'الحدود مع مصر': { coordinates: [31.2200, 34.2650], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
+        'الحدود مع إسرائيل': { coordinates: [31.5067, 34.5511], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
+        'الحدود مع البحر': { coordinates: [31.5170, 34.4200], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
+        'الحدود البحرية': { coordinates: [31.5170, 34.4200], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
         'الحدود البرية': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
-        'الحدود البرية مع مصر': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
-        'الحدود البرية مع إسرائيل': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
-        'الحدود البرية مع البحر': { coordinates: [31.5010, 34.4660], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
+        'الحدود البرية مع مصر': { coordinates: [31.2200, 34.2650], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
+        'الحدود البرية مع إسرائيل': { coordinates: [31.5067, 34.5511], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
+        'الحدود البرية مع البحر': { coordinates: [31.4890, 34.4500], type: ReliefLocationType.OTHER, defaultNeeds: ['Security', 'Emergency Response'] },
+
+        // Humanitarian crossing
+        'معبر كرم أبو سالم': { coordinates: [31.2241, 34.2658], type: ReliefLocationType.SUPPLIES, defaultNeeds: ['Medical Supplies', 'Food', 'Water'] },
     };
+
 
     // Enhanced keyword mapping for better context understanding
     private readonly contextKeywords = {
