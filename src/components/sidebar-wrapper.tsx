@@ -35,9 +35,17 @@ const SidebarWrapper = () => {
         setIsSideBarOpen(isOpen);
     }, [isOpen, setIsSideBarOpen]);
 
-
+    // Memoize the open state to avoid unnecessary re-renders
+    // This is useful for performance optimization
+    // and to ensure the Sheet component receives the correct props
+    // If not isSmallScreen, we want to keep the sidebar open
+    // if isSmallScreen, we want to toggle it based on isOpen
+    // This allows us to control the sidebar's open state based on screen size
     const openState = useMemo(
-        () => (isOpen ? { open: true } : {}), [isOpen]
+        () => ((!isSmallScreen && isOpen) ? { open: true } : {
+            open: isOpen,
+            onOpenChange: setIsOpen,
+        }), [isSmallScreen, isOpen]
     );
 
 
