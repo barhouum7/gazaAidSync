@@ -11,10 +11,16 @@ import { useMapState } from "@/hooks/use-map-state";
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { Filter, RefreshCcw } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { useLiveNewsData } from "@/hooks/use-live-news-data";
 
 export default function MapSidebar() {
 
+    // State to manage the visibility of the crisis overview
+    const [showMore, setShowMore] = useState(false);
+    // State to manage refreshing
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const { data, loading: newsLoading, error: newsError } = useLiveNewsData();
 
     const {
         locations,
@@ -24,14 +30,27 @@ export default function MapSidebar() {
         activeFilters,
         setSelectedLocation,
         setActiveFilters,
-        // refreshData,
+        fetchLocations: fetchAllLocations,
     } = useMapState();
+
+    // const handleRefresh = async () => {
+    //     setIsRefreshing(true);
+    //     // Simulate data refresh
+    //     await new Promise(resolve => setTimeout(resolve, 1000));
+    //     setIsRefreshing(false);
+    // };
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        // Simulate data refresh
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsRefreshing(false);
+        try {
+            await fetchAllLocations(); // Refresh all locations
+        } catch (err) {
+            console.error('Error refreshing data:', err);
+        } finally {
+            setTimeout(() => {
+                setIsRefreshing(false);
+            }, 1000); // Simulate a delay for the refresh animation
+        }
     };
 
 
@@ -55,7 +74,10 @@ export default function MapSidebar() {
                         className="h-8 w-8"
                         title="Refresh data"
                     >
-                        <RefreshCcw className="h-4 w-4" />
+                        <RefreshCcw className={cn(
+                            "h-4 w-4"
+                            , isRefreshing ? 'animate-spin' : ''
+                        )} />
                     </Button>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -66,10 +88,13 @@ export default function MapSidebar() {
             <CardContent>
                 <div className="space-y-4">
                     {/* Crisis Overview */}
-                    <Alert variant="destructive" className="bg-red-50 border-red-200">
+                    <Alert variant="destructive" className="
+                        bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800 
+                        text-red-700 dark:text-red-300 p-4 rounded-lg shadow-sm
+                    ">
                         <AlertTitle className="text-red-700 font-semibold">Crisis Overview</AlertTitle>
                         <AlertDescription>
-                            <ul className="space-y-2 text-sm mt-2 text-red-700">
+                            {/* <ul className="space-y-2 text-sm mt-2 text-red-700">
                                 <li className="flex items-center gap-2">
                                     <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                                     90% of population displaced
@@ -86,56 +111,82 @@ export default function MapSidebar() {
                                     <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                                     47% of hospitals non-functional
                                 </li>
-                            </ul>
-                        </AlertDescription>
-                    </Alert>
+                            </ul> */}
 
-                    {/* Selected Location Details */}
-                    {loading ? (
-                        <div className="space-y-4">
-                            <Skeleton className="h-8 w-3/4" />
-                            <Skeleton className="h-4 w-1/2" />
-                            <Skeleton className="h-20 w-full" />
-                        </div>
-                    ) : selectedLocation ? (
-                        <div className="p-4 bg-white rounded-lg border">
-                            <h3 className="font-bold text-lg mb-2">{selectedLocation.name}</h3>
-                            <div className="space-y-2 text-sm">
-                                <p className="flex items-center">
-                                    <span className="font-semibold mr-2">Type:</span>
-                                    <Badge variant="outline">{selectedLocation.type}</Badge>
-                                </p>
-                                <p className="flex items-center gap-2">
-                                    <span className="font-semibold">Status:</span>
-                                    <span className={`px-2 py-1 rounded ${
-                                        selectedLocation.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                                        selectedLocation.status === 'NEEDS_SUPPORT' ? 'bg-amber-100 text-amber-800' :
-                                        'bg-red-100 text-red-800'
-                                    }`}>
-                                        {selectedLocation.status}
-                                    </span>
-                                </p>
-                                {selectedLocation.description && (
-                                    <p className="mt-2">{selectedLocation.description}</p>
-                                )}
-                                {selectedLocation.contactInfo && (
-                                    <p className="mt-2">
-                                        <span className="font-semibold">Contact:</span> {selectedLocation.contactInfo}
-                                    </p>
-                                )}
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    Last updated: {new Date(selectedLocation.lastUpdated).toLocaleDateString()}
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        <Alert>
-                            <AlertTitle>No location selected</AlertTitle>
-                            <AlertDescription>
-                                Click on a marker on the map to view details about that location.
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                            {newsLoading ? (
+                                <Skeleton className="h-20 w-full bg-card" />
+                            ) : newsError ? (
+                                <span className="text-xs text-red-500">{newsError}</span>
+                            ) : (
+                                <ul className="space-y-2 text-sm mt-2 text-red-700">
+                                    <li className="flex items-center gap-2">
+                                        <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                        <span>{data?.crisisOverview?.killed || "—"}</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                        <span>{data?.crisisOverview?.injured || "—"}</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                        <span>{data?.crisisOverview?.missing || "—"}</span>
+                                    </li>
+                                </ul>
+                            )}
+                        </AlertDescription>
+
+                        <AlertTitle className="text-red-700 font-semibold mt-2">Israeli attacks have damaged:</AlertTitle>
+                        <AlertDescription>
+                            {newsLoading ? (
+                                <Skeleton className="h-20 w-full bg-card" />
+                            ) : newsError ? (
+                                <span className="text-xs text-red-500">{newsError}</span>
+                            ) : (
+                                <ul className="space-y-2 text-sm mt-2 text-red-700">
+                                    <li className="flex items-center gap-2">
+                                        <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                        <span>{data?.devastation?.homes || "—"}</span>
+                                    </li>
+                                    {/* Show and hide the reset based on the showMore state: */}
+                                    { showMore && (
+                                        <>
+                                            <li className="flex items-center gap-2">
+                                                <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                                <span>{data?.devastation?.commercialFacilities || "—"}</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                                <span>{data?.devastation?.schools || "—"}</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                                <span>{data?.devastation?.hospitals || "—"}</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                                <span>{data?.devastation?.roads || "—"}</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="flex-none h-1.5 w-1.5 rounded-full bg-red-500" />
+                                                <span>{data?.devastation?.cropland || "—"}</span>
+                                            </li>
+                                        </>
+                                    )
+                                    }
+                                </ul>
+                            )}
+                        </AlertDescription>
+
+                        {/* Show more - show less toggle */}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-700 hover:underline mt-2 w-fit"
+                            onClick={() => setShowMore(!showMore)}
+                        >
+                            {showMore ? "Show Less" : "Show More"}
+                        </Button>
+                    </Alert>
 
                     {/* Action Buttons */}
                     <div className="space-y-2">
