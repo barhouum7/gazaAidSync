@@ -57,6 +57,7 @@
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
     "next-themes": "^0.4.6",
+    "nextjs-toploader": "^3.8.16",
     "puppeteer": "^24.10.1",
     "react": "^19.1.0",
     "react-day-picker": "^8.10.1",
