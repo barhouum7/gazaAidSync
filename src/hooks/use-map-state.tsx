@@ -33,7 +33,7 @@ export const useMapState = () => {
         setLoading(true);
         setError(null);
         try {
-            const fetchedLocations = await locationService.getLocations(); // Now fetches from DB
+            const fetchedLocations = await locationService.getLocations();
             setLocations(fetchedLocations);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch locations');
@@ -116,7 +116,7 @@ export const useMapState = () => {
 
 
     return {
-        locations, // Now directly from the DB via locationService
+        locations,
         selectedLocation,
         loading,
         setLoading,
