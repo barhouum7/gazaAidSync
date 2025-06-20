@@ -51,7 +51,7 @@ const Map: React.FC<MapProps> = ({ isFullscreen, setIsFullscreen }) => {
     const [showTimeline, setShowTimeline] = useState(false);
 
     const {
-        locations, // All locations from DB (fetched by useMapState)
+        locations, // All locations (fetched by useMapState)
         selectedLocation,
         loading,
         setLoading,
@@ -124,14 +124,18 @@ const Map: React.FC<MapProps> = ({ isFullscreen, setIsFullscreen }) => {
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
-            await fetchAllLocations(); // Refresh all locations from the DB
+            await fetchAllLocations(); // Refresh all locations
             // Re-trigger the filtering useEffect by updating selectedDate or activeFilters
             setSelectedDate(new Date()); // Reset to today to force re-filter
             setActiveFilters(Object.values(ReliefLocationType)); // Reset filters too if desired
         } catch (err) {
             console.error('Error refreshing data:', err);
+        } finally {
+            // Reset isRefreshing state after operation
+            setTimeout(() => {
+                setIsRefreshing(false);
+            }, 1000); // Delay to show loading state briefly
         }
-        setIsRefreshing(false);
     };
 
     const handleDateChange = (date: Date) => {
