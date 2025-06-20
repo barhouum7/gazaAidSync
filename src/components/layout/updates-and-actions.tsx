@@ -8,7 +8,7 @@ import EmergencyAlerts from "@/components/alerts/emergency-alerts";
 import { Button } from "@/components/ui/button";
 import AidStatistics from "../dashboard/aid-statistics";
 
-export default function UpdatesAndActions() {
+export default function UpdatesAndActions({ expanded }: { expanded?: boolean }) {
     return (
         <div className="flex flex-col gap-8">
             <Tabs defaultValue="updates" className="w-full">
@@ -21,7 +21,7 @@ export default function UpdatesAndActions() {
                     </TabsContent> */}
                 <TabsContent value="updates" className="mt-4">
                     <Card className="p-4 shadow-md border border-muted">
-                        <LiveUpdatesFeed />
+                        <LiveUpdatesFeed expanded={expanded} />
                     </Card>
                 </TabsContent>
                 <TabsContent value="alerts" className="mt-4">
