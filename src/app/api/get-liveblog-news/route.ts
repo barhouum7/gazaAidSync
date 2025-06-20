@@ -155,6 +155,45 @@ export async function GET() {
         //     }
         // });
 
+
+
+        // Crises overview, and Devastation across Gaza
+        const crisisOverviewResponse = await axios.get('https://www.aljazeera.com/news/longform/2023/10/9/israel-hamas-war-in-maps-and-charts-live-tracker');
+        const crisisOverviewHtml = crisisOverviewResponse.data;
+        const $crisisOverview = cheerio.load(crisisOverviewHtml);
+        console.log('Scraping Al Jazeera crisis overview...');
+
+        // Extract crisis overview data
+        const crisisOverviewData = {
+            killed: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(0).text().trim(),
+            injured: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(1).text().trim(),
+            missing: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(2).text().trim(),
+        };
+
+        // Devastation across Gaza
+        // Israeli attacks have damaged:
+
+        // Almost all of Gaza’s homes (damaged or destroyed)
+        // 80 percent of commercial facilities
+        // 88 percent of school buildings
+        // Healthcare facilities - 50 percent of hospitals are partially functional
+        // 68 percent of road networks
+        // 68 percent of cropland
+        const devastationData = {
+            homes: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(7).text().trim(),
+            commercialFacilities: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(8).text().trim(),
+            schools: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(9).text().trim(),
+            hospitals: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(10).text().trim(),
+            roads: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(11).text().trim(),
+            cropland: $crisisOverview('div.longform-text div.wysiwyg.css-mkhf1y li').eq(12).text().trim(),
+        };
+
+
+        // console.log('Crisis Overview:', crisisOverviewData);
+        // console.log('Devastation Data:', devastationData);
+
+
+
         // Return the scraped data
         return NextResponse.json({
             headline: { title: '', link: '' },
@@ -162,6 +201,8 @@ export async function GET() {
             news,
             trending,
             // soumoudConvoyNews
+            crisisOverview: crisisOverviewData,
+            devastation: devastationData,
         });
     } catch (error) {
         console.error('Error scraping:', error);
