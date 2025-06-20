@@ -47,7 +47,7 @@ export default function MapContainerWrapContent() {
             <Card 
             // className={`h-full p-0 relative shadow-lg border border-muted ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}
             className={`
-                h-full p-0
+                h-[300px] sm:h-[400px] md:h-full p-0 overflow-hidden
                 ${isFullscreen ? 'fixed inset-0 z-50 w-full bg-transparent border-none shadow-none' : 'shadow-lg border border-muted'}
             `}
             >

@@ -16,8 +16,9 @@ const MapContainerWrapContent = dynamic(
     },
     {
         loading: () => (
-            <div className="w-full h-full flex items-center justify-center bg-muted/10">
-                <Skeleton className="flex items-center justify-center gap-2 w-full h-full">
+            <div className="w-full h-[300px] sm:h-[400px] md:h-full
+            flex items-center justify-center bg-muted/10">
+                <Skeleton className="flex items-center justify-center gap-2 w-full h-[300px] sm:h-[400px] md:h-full">
                     <Loader2 className="h-6 w-6 animate-spin" />
                     <span>Loading map...</span>
                 </Skeleton>
