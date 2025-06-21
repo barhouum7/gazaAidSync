@@ -29,37 +29,40 @@ const ClusteredCustomMarkers = ({ locations, onMarkerClick }: ClusteredCustomMar
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
 
   const getCustomIcon = useCallback((location: ReliefLocation) => {
-    const markerConfig: Record<ReliefLocationType, { color: string; icon: string; label: string }> = {
+    const markerConfig: Record<
+      ReliefLocationType,
+      { color: string; icon: string; label: string }
+    > = {
       MEDICAL: {
-        color: '#FF4444',
-        icon: '🏥',
-        label: 'Hospital'
+        color: "#FF4444",
+        icon: "🏥",
+        label: "Hospital",
       },
       FOOD: {
-        color: '#FF8C00',
-        icon: '🍽️',
-        label: 'Food Distribution'
+        color: "#FF8C00",
+        icon: "🍽️",
+        label: "Food Distribution",
       },
       SHELTER: {
-        color: '#4169E1',
-        icon: '🏠',
-        label: 'Shelter'
+        color: "#4169E1",
+        icon: "🏠",
+        label: "Shelter",
       },
       WATER: {
-        color: '#00CED1',
-        icon: '💧',
-        label: 'Water Point'
+        color: "#00CED1",
+        icon: "💧",
+        label: "Water Point",
       },
       SUPPLIES: {
-        color: '#32CD32',
-        icon: '📦',
-        label: 'Supply Center'
+        color: "#32CD32",
+        icon: "📦",
+        label: "Supply Center",
       },
       OTHER: {
-        color: '#808080',
-        icon: 'ℹ️',
-        label: 'Other'
-      }
+        color: "#808080",
+        icon: "🚩",
+        label: "Other",
+      },
     };
 
     const config = markerConfig[location.type];

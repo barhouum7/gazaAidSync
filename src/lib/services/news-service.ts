@@ -128,24 +128,32 @@ class NewsService {
     // Enhanced keyword mapping for better context understanding
     private readonly contextKeywords = {
         medical: {
-            keywords: ['إصابة', 'جرحى', 'مستشفى', 'طبي', 'صحي', 'علاج', 'جرح', 'دم', 'إسعاف', 'عيادة', 'طبيب', 'مريض', 'دواء', 'علاج', 'علاج طبي', 'شهيدا', 'إسعافات أولية'],
-            needs: ['Medical Supplies', 'Staff', 'Equipment', 'Blood', 'Medicines']
+            keywords: ['إصابة', 'جرحى', 'مستشفى', 'طبي', 'صحي', 'علاج', 'جرح', 'دم', 'إسعاف', 'عيادة', 'طبيب', 'مريض', 'دواء', 'علاج', 'علاج طبي', 'شهيدا', 'إسعافات أولية', 'جراح', 'جراحات', 'المستشفيات', 'مشفى', 'صحة', 'طبيبة', 'ممرض', 'ممرضة', 'أدوية', 'علاج طبي', 'جراحة', 'عناية طبية', 'رعاية صحية'],
+            needs: ['Medical Supplies', 'Staff', 'Equipment', 'Blood', 'Medicines', 'First Aid Kits']
         },
-        military: {
-            keywords: ['قصف', 'اشتباك', 'كمين', 'جندي', 'عسكري', 'هجوم', 'قصف'],
-            needs: ['Security', 'Emergency Response', 'Evacuation Support']
-        },
-        humanitarian: {
-            keywords: ['مساعدات', 'إغاثة', 'إجلاء', 'مأوى', 'مخيم', 'طعام', 'ماء', 'دواء', 'ملابس', 'إيواء', 'إغاثة إنسانية', 'مساعدات إنسانية', 'مساعدات طبية', 'مساعدات غذائية', 'المساعدات'],
-            needs: ['Food', 'Water', 'Shelter', 'Medical Supplies', 'Clothing']
+        shelter: {
+            keywords: ['مأوى', 'مخيم', 'إيواء', 'سكن', 'سكني', 'سكنية', 'منزل', 'منازل', 'مخيمات', 'مخيمات لاجئين', 'مخيمات إيواء', 'مخيمات إغاثة', 'مخيمات إغاثية', 'مخيمات إيواء مؤقتة', 'مخيمات إيواء طارئة', 'مخيمات إيواء عاجلة', 'مخيمات إيواء إنسانية', 'مخيمات إيواء مدنية', 'إيواء مؤقت', 'إيواء طارئ', 'إيواء عاجل'],
+            needs: ['Shelter', 'Tents', 'Blankets', 'Clothing', 'Hygiene Kits', 'Sleeping Bags']
         },
         food: {
-            keywords: ['طعام', 'غذاء', 'وجبة', 'توزيع', 'معونة'],
-            needs: ['Food Supplies', 'Distribution Equipment', 'Storage']
+            keywords: ['طعام', 'غذاء', 'وجبة', 'توزيع', 'معونة', 'مساعدات غذائية', 'توزيع طعام', 'توزيع غذاء', 'وجبات', 'طعام ساخن', 'وجبة ساخنة', 'توزيع وجبات', 'مطبخ', 'مطابخ', 'مطبخ إغاثي', 'مطابخ إغاثية'],
+            needs: ['Food Supplies', 'Distribution Equipment', 'Storage', 'Hot Meals', 'Cooking Equipment']
         },
         water: {
-            keywords: ['ماء', 'شرب', 'مياه', 'توزيع'],
-            needs: ['Water', 'Water Tanks', 'Purification Tablets']
+            keywords: ['ماء', 'شرب', 'مياه', 'توزيع', 'مياه شرب', 'توزيع مياه', 'خزانات مياه', 'تنقية مياه', 'مياه نظيفة', 'مياه صالحة للشرب'],
+            needs: ['Water', 'Water Tanks', 'Purification Tablets', 'Water Filters', 'Clean Water']
+        },
+        humanitarian: {
+            keywords: ['مساعدات', 'إغاثة', 'إجلاء', 'دواء', 'ملابس', 'إيواء', 'إغاثة إنسانية', 'مساعدات إنسانية', 'مساعدات طبية', 'مساعدات غذائية', 'المساعدات', 'توزيع مساعدات', 'إغاثة عاجلة', 'مساعدات عاجلة', 'إغاثة طارئة', 'مساعدات طارئة'],
+            needs: ['Food', 'Water', 'Shelter', 'Medical Supplies', 'Clothing', 'Hygiene Kits']
+        },
+        military: {
+            keywords: ['قصف', 'اشتباك', 'كمين', 'جندي', 'عسكري', 'هجوم', 'قصف', 'توغل', 'دبابة', 'صاروخ', 'مروحية', 'طائرة حربية', 'عملية عسكرية', 'إطلاق نار'],
+            needs: ['Security', 'Emergency Response', 'Evacuation Support', 'Protection']
+        },
+        emergency: {
+            keywords: ['طوارئ', 'عاجل', 'طارئ', 'كارثة', 'أزمة', 'حالة طوارئ', 'استجابة طارئة', 'إغاثة طارئة', 'مساعدات طارئة', 'حالة عاجلة'],
+            needs: ['Emergency Response', 'First Aid', 'Evacuation Support', 'Emergency Supplies']
         }
     };
 
@@ -279,6 +287,43 @@ class NewsService {
         let severity: 'high' | 'medium' | 'low' = 'low';
         let placeName: string | undefined;
 
+        // First, determine type and needs based on content keywords
+        let keywordBasedType: ReliefLocationType | undefined;
+        let keywordBasedNeeds: string[] = [];
+
+        // Check for context keywords to determine type and needs
+        const contextScores: Record<string, number> = {};
+        const contextNeeds: Record<string, string[]> = {};
+        
+        for (const [context, info] of Object.entries(this.contextKeywords)) {
+            const matches = info.keywords.filter(keyword => content.includes(keyword));
+            if (matches.length > 0) {
+                contextScores[context] = matches.length;
+                contextNeeds[context] = info.needs;
+            }
+        }
+
+        // Determine the primary context based on score (most matches wins)
+        if (Object.keys(contextScores).length > 0) {
+            const primaryContext = Object.entries(contextScores)
+                .sort(([,a], [,b]) => b - a)[0][0];
+            
+            keywordBasedType = this.mapContextToReliefType(primaryContext);
+            
+            // Collect all needs from all matched contexts
+            for (const context of Object.keys(contextScores)) {
+                keywordBasedNeeds = [...new Set([...keywordBasedNeeds, ...contextNeeds[context]])];
+            }
+
+            // Debug logging
+            console.log('Location type determination:', {
+                content: content.substring(0, 100) + '...',
+                contextScores,
+                primaryContext,
+                keywordBasedType,
+                keywordBasedNeeds
+            });
+        }
 
         // Sort location keys by length (desc) to match the most specific location first
         const sortedLocations = Object.keys(this.locationMap).sort((a, b) => b.length - a.length);
@@ -288,9 +333,13 @@ class NewsService {
             if (content.includes(loc)) {
                 const info = this.locationMap[loc];
                 location = info.coordinates;
-                type = info.type;
-                needs = [...info.defaultNeeds];
                 placeName = loc;
+                
+                // Use keyword-based type if available, otherwise fall back to location map type
+                type = keywordBasedType || info.type;
+                
+                // Merge needs: keyword-based needs take priority, then location map needs
+                needs = [...new Set([...keywordBasedNeeds, ...info.defaultNeeds])];
                 break;
             }
         }
@@ -300,27 +349,28 @@ class NewsService {
 
         // Fallback: if civilian-focused but no specific location, use Gaza center
         if (!location && this.civilianKeywords.some(keyword => content.includes(keyword)) && hasGazaContext) {
-            // location = [31.5017, 34.4668];  // Gaza center coordinates
-            // type = ReliefLocationType.SUPPLIES;  // Default to supplies since it's about aid
-            // needs = ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];  // Include security due to targeting
-            // placeName = 'غزة';  // Default to Gaza
-
             // Add a small random offset to avoid exact overlap
             const jitter = () => (Math.random() - 0.5) * 0.01; // ~1km jitter
             location = [31.5017 + jitter(), 34.4668 + jitter()];
-            type = ReliefLocationType.SUPPLIES;
-            needs = ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];
+            
+            // Use keyword-based type if available, otherwise default to SUPPLIES
+            type = keywordBasedType || ReliefLocationType.SUPPLIES;
+            
+            // Use keyword-based needs if available, otherwise use default needs
+            needs = keywordBasedNeeds.length > 0 
+                ? keywordBasedNeeds 
+                : ['Food', 'Water', 'Medical Supplies', 'Shelter', 'Security'];
             placeName = 'غزة';
         }
 
-        // Check for context keywords to enhance type and needs
-        for (const [context, info] of Object.entries(this.contextKeywords)) {
-            if (info.keywords.some(keyword => content.includes(keyword))) {
-                if (!type) {
-                    type = this.mapContextToReliefType(context);
-                }
-                needs = [...new Set([...needs, ...info.needs])];
-            }
+        // If we still don't have a type but have keyword-based type, use it
+        if (!type && keywordBasedType) {
+            type = keywordBasedType;
+        }
+
+        // If we still don't have needs but have keyword-based needs, use them
+        if (needs.length === 0 && keywordBasedNeeds.length > 0) {
+            needs = keywordBasedNeeds;
         }
 
         // Check if the content is military-focused
@@ -341,10 +391,12 @@ class NewsService {
     private mapContextToReliefType(context: string): ReliefLocationType {
         const typeMap: Record<string, ReliefLocationType> = {
             medical: ReliefLocationType.MEDICAL,
+            shelter: ReliefLocationType.SHELTER,
             food: ReliefLocationType.FOOD,
             water: ReliefLocationType.WATER,
             humanitarian: ReliefLocationType.SUPPLIES,
-            military: ReliefLocationType.OTHER
+            military: ReliefLocationType.OTHER,
+            emergency: ReliefLocationType.OTHER
         };
         return typeMap[context] || ReliefLocationType.OTHER;
     }
