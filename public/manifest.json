@@ -72,14 +72,14 @@
     "screenshots": [
         {
         "src": "/screenshots/desktop.jpg",
-        "sizes": "1280x800",
+        "sizes": "1920x850",
         "type": "image/jpg",
         "form_factor": "wide",
         "label": "Desktop view of Gaza Aid Sync"
         },
         {
         "src": "/screenshots/mobile.jpg",
-        "sizes": "750x1334",
+        "sizes": "295x643",
         "type": "image/jpg",
         "label": "Mobile view of Gaza Aid Sync"
         }
