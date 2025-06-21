@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gaza AidSync 🇵🇸
 
-## Getting Started
+**A public web platform for tracking humanitarian aid, raising global awareness, and empowering action for civilians in Gaza.**  
+Built open-source for transparency, collaboration, and impact.
 
-First, run the development server:
+## 🧭 Live App
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+🌍 [Visit GazaAidSync.org](https://gaza-aid-sync.vercel.app)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📌 About the Project
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Gaza AidSync is a real-time web application that:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 🗺️ Maps **verified aid distribution points**, **blocked routes**, and **urgent civilian needs**
+- 🧑‍🤝‍🧑 Enables **crowdsourced reporting** from trusted contributors
+- 📊 Displays **live dashboards** with statistics and humanitarian data
+- 📣 Empowers advocacy with ready-to-send emails and social tools
+- 🤝 Links to **verified donation campaigns** and NGO partners
 
-## Learn More
+Built in response to the ongoing humanitarian crisis in Gaza, this platform offers transparency, accessibility, and a centralized hub for coordination.
 
-To learn more about Next.js, take a look at the following resources:
+## ✨ Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Interactive Leaflet.js Map (with Marker Clustering)
+- Multi-source data: live scraping + user-submitted reports
+- Real-time dashboards and metrics (aid sent, areas under threat, etc.)
+- Advocacy hub with templates to contact decision-makers
+- Multilingual UI ready (Arabic / English toggle)
+- Responsive and mobile-friendly
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠️ Tech Stack
 
-## Deploy on Vercel
+- `Next.js 15 App Router` + `React 19`
+- `Tailwind CSS`, `Shadcn UI`, `Lucide`, `Radix UI`
+- `TypeScript`, `Zustand`, `React Hook Form`
+- `Leaflet` with marker clustering
+- `Prisma ORM` + `Neon DB (PostgreSQL)`
+- `Clerk` for authentication
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔄 Roadmap
+- MVP: Live app with map + dashboards + basic reports
+- Enable user-submitted reports (with moderation)
+- Real-time alerts system
+- Full Arabic UI
+- NGO and volunteer backend panel
+- Public API for global access
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## 🤝 Contributing
+We welcome contributions, especially from:
+
+- Devs with experience in scraping, data viz, or humanitarian tools
+- Translators (Arabic <> English)
+- NGO / activist orgs that want to collaborate
+
+## 📣 Spread the Word
+  Help amplify this project by sharing it and linking to trusted humanitarian organizations.
+
+- 🌐 [https://GazaAidSync.org](https://gaza-aid-sync.vercel.app/)
+
+- 🐦 Twitter: @GazaAidSync
+
+- 📷 Instagram: @GazaAidSync
+
+## 📄 License
+MIT License.
+Built by [@barhouum7](https://github.com/barhouum7) with ❤️ in solidarity with Gaza.
