@@ -1,0 +1,33 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" opacity="0.15" xmlns="http://www.w3.org/2000/svg">
+  <!-- Palestinian flag colors - subtle integration -->
+  <!-- Black stripe -->
+  <rect x="10" y="5" width="180" height="8" fill="#000000" opacity="0.4"/>
+  <!-- White stripe -->
+  <rect x="10" y="13" width="180" height="8" fill="#FFFFFF" opacity="0.4"/>
+  <!-- Green stripe -->
+  <rect x="10" y="21" width="180" height="8" fill="#009736" opacity="0.4"/>
+  <!-- Red triangle -->
+  <path d="M10 5 L10 29 L30 17 Z" fill="#CE1126" opacity="0.4"/>
+
+  <!-- Main olive branch stem -->
+  <path d="M5 55 Q50 15 195 55" stroke="#2D5016" stroke-width="4" fill="none" stroke-linecap="round"/>
+  
+  <!-- Secondary branch -->
+  <path d="M60 35 Q90 25 120 35" stroke="#2D5016" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Olive leaves with more natural positioning -->
+  <ellipse cx="35" cy="38" rx="6" ry="3" fill="#4A7C59" opacity="0.8"/>
+  <ellipse cx="70" cy="28" rx="7" ry="3.5" fill="#4A7C59" opacity="0.8"/>
+  <ellipse cx="105" cy="32" rx="6" ry="3" fill="#4A7C59" opacity="0.8"/>
+  <ellipse cx="140" cy="42" rx="7" ry="3.5" fill="#4A7C59" opacity="0.8"/>
+  <ellipse cx="175" cy="48" rx="6" ry="3" fill="#4A7C59" opacity="0.8"/>
+  
+  <!-- Additional smaller leaves for more natural look -->
+  <ellipse cx="85" cy="22" rx="4" ry="2" fill="#4A7C59" opacity="0.6"/>
+  <ellipse cx="155" cy="38" rx="4" ry="2" fill="#4A7C59" opacity="0.6"/>
+  
+  <!-- Small olive fruits -->
+  <circle cx="50" cy="45" r="2" fill="#8B4513" opacity="0.7"/>
+  <circle cx="130" cy="40" r="2" fill="#8B4513" opacity="0.7"/>
+  <circle cx="170" cy="50" r="2" fill="#8B4513" opacity="0.7"/>
+</svg>
