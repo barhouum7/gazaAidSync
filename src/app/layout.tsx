@@ -8,7 +8,7 @@ import "./globals.css";
 import { Suspense } from "react";
 import NextTopLoader from 'nextjs-toploader';
 import { cn } from "@/lib/utils";
-import { Inter } from "next/font/google";
+import { Cairo } from "next/font/google";
 import { Toaster } from "sonner";
 import Footer from "@/components/layout/footer";
 import HeaderContainer from "@/components/layout/header-container";
@@ -23,16 +23,17 @@ import LoaderBar from "@/components/ui/loader-bar";
 
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
   // Also supported but less commonly used
   // interactiveWidget: 'resizes-visual',
-}
+};
 
-const inter = Inter({
-  subsets: ["latin"],
+
+const cairo = Cairo({
+  subsets: ["latin", "arabic"],
 });
 
 // const geistSans = Geist({
@@ -45,16 +46,31 @@ const inter = Inter({
 //   subsets: ["latin"],
 // });
 
+
+
 export const metadata: Metadata = {
   title: "Gaza Aid Sync - Humanitarian Aid Tracking",
-  description: "Real-time tracking of humanitarian aid delivery and critical needs in Gaza",
-  keywords: ["gaza aid sync", "humanitarian aid tracking", "gaza aid", "humanitarian aid", "gaza aid delivery", "humanitarian aid delivery", "gaza aid needs", "humanitarian aid needs", "gaza aid tracking", "humanitarian aid tracking"],
+  description:
+    "Real-time tracking of humanitarian aid delivery and critical needs in Gaza",
+  keywords: [
+    "gaza aid sync",
+    "humanitarian aid tracking",
+    "gaza aid",
+    "humanitarian aid",
+    "gaza aid delivery",
+    "humanitarian aid delivery",
+    "gaza aid needs",
+    "humanitarian aid needs",
+    "gaza aid tracking",
+    "humanitarian aid tracking",
+  ],
   authors: [{ name: "Gaza Aid Sync" }],
   creator: "Gaza Aid Sync",
   publisher: "Gaza Aid Sync",
   openGraph: {
     title: "Gaza Aid Sync - Humanitarian Aid Tracking",
-    description: "Real-time tracking of humanitarian aid delivery and critical needs in Gaza",
+    description:
+      "Real-time tracking of humanitarian aid delivery and critical needs in Gaza",
     type: "website",
     locale: "en",
     siteName: "Gaza Aid Sync",
@@ -70,7 +86,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     title: "Gaza Aid Sync - Humanitarian Aid Tracking",
-    description: "Real-time tracking of humanitarian aid delivery and critical needs in Gaza",
+    description:
+      "Real-time tracking of humanitarian aid delivery and critical needs in Gaza",
     card: "summary_large_image",
     images: [
       {
@@ -86,19 +103,22 @@ export const metadata: Metadata = {
   },
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning
+      className="min-h-screen"
+    >
       <body
         suppressHydrationWarning
         // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
-          inter.className
+          cairo.className
         )}
       >
         <ThemeProvider
@@ -114,7 +134,7 @@ export default function RootLayout({
             <NextTopLoader
               // color="#2563eb" // Blue-600
               // color="#dc2626" // Red-600
-              // color="#16a34a" // Green-600
+              color="#16a34a" // Green-600
               // color="#f59e0b" // Amber-600
               // color="#4f46e5" // Indigo-600
               // color="#ec4899" // Pink-600
@@ -127,7 +147,7 @@ export default function RootLayout({
               // color="#3b82f6" // Blue-500
               // color="#6366f1" // Indigo-500
               // color="#8b5cf6" // Indigo-400
-              color="#a78bfa" // Purple-300
+              // color="#a78bfa" // Purple-300
               // color="#c084fc" // Purple-200
               // color="#e879f9" // Pink-300
               // color="#f472b6" // Pink-400
@@ -166,11 +186,11 @@ export default function RootLayout({
               // color="#fef3c7" // Light Amber
               // color="#f0f4f8" // Light Gray
               // shadow="0 0 10px #FF69B4,0 0 5px #FF69B4"
-              shadow="0 0 10px rgba(79, 70, 229, 0.5), 0 0 5px rgba(79, 70, 229, 0.5)"
+              // shadow="0 0 10px rgba(79, 70, 229, 0.5), 0 0 5px rgba(79, 70, 229, 0.5)"
               // shadow="0 0 10px rgba(22, 162, 74, 0.5), 0 0 5px rgba(22, 162, 74, 0.5)"
               // shadow="0 0 10px rgba(16, 16, 16, 0.5), 0 0 5px rgba(16, 16, 16, 0.5)"
               // shadow="0 0 10px rgba(255, 105, 180, 0.5), 0 0 5px rgba(255, 105, 180, 0.5)"
-              // shadow="0 0 10px rgba(220, 38, 38, 0.5), 0 0 5px rgba(220, 38, 38, 0.5)"
+              shadow="0 0 10px rgba(220, 38, 38, 0.5), 0 0 5px rgba(220, 38, 38, 0.5)"
               // shadow="0 0 10px rgba(255, 255, 255, 0.5), 0 0 5px rgba(255, 255, 255, 0.5)"
               // shadow="0 0 10px rgba(255, 165, 0, 0.5), 0 0 5px rgba(255, 165, 0, 0.5)"
               initialPosition={0.08}
@@ -199,10 +219,10 @@ export default function RootLayout({
                     <HeaderContainer />
 
                     {/* Main Content */}
-                    <main className="flex flex-col overflow-y-auto gap-6 bg-muted/10">
-                      <div className="flex-1 flex flex-col gap-6 p-4">
+                    <main className="flex flex-col gap-6 p-4 bg-muted/10 min-h-screen"
+                      style={{ backgroundImage: 'url("/assets/olive-branch.svg")', backgroundSize: 'cover' }}
+                    >
                         {children}
-                      </div>
                     </main>
 
                     {/* Footer */}
