@@ -28,3 +28,30 @@ model AidPoint {
 
     @@map("aid_points")
 }
+
+model GazaTweetUser {
+    id          String   @id @default(cuid())
+    twitterId   String   @unique
+    username    String
+    displayName String
+    tweets      GazaTweetUpdate[]
+}
+
+model GazaTweetHashtag {
+    id        String   @id @default(cuid())
+    tag       String   @unique
+    tweets    GazaTweetUpdate[] @relation("TweetHashtags")
+}
+
+model GazaTweetUpdate {
+    id            String   @id @default(cuid())
+    tweetId       String   @unique
+    text          String
+    author        GazaTweetUser   @relation(fields: [authorId], references: [id])
+    authorId      String
+    createdAt     DateTime
+    tweetUrl      String
+    hashtags      GazaTweetHashtag[] @relation("TweetHashtags")
+    rawJson       Json?
+    fetchedAt     DateTime @default(now())
+}
