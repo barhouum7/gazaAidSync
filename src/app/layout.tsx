@@ -64,6 +64,7 @@ export const metadata: Metadata = {
     "gaza aid tracking",
     "humanitarian aid tracking",
   ],
+  manifest: "/manifest.json",
   authors: [{ name: "Gaza Aid Sync" }],
   creator: "Gaza Aid Sync",
   publisher: "Gaza Aid Sync",
