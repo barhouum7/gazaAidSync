@@ -13,8 +13,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Filter, RefreshCcw } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useLiveNewsData } from "@/hooks/use-live-news-data";
+import BlurImage from "../ui/blur-image";
+import { useTheme } from "next-themes";
 
 export default function MapSidebar() {
+    const { theme } = useTheme();
 
     // State to manage the visibility of the crisis overview
     const [showMore, setShowMore] = useState(false);
@@ -59,12 +62,36 @@ export default function MapSidebar() {
     );
 
     return (
-        <Card className="w-full h-full overflow-y-auto border-r rounded-none">
+        <Card className="w-full h-full overflow-y-auto border-r rounded-none"
+        style={{ backgroundImage: 'url("/assets/keffiyeh-bg.svg")', backgroundSize: 'cover' }}
+        >
             <CardHeader className="space-y-2">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
-                        <h1 className="text-xl font-bold">Gaza Aid Sync</h1>
-                        <Badge variant="destructive" className="rounded-md uppercase">Live</Badge>
+                        <Link
+                            href="/"
+                            // className="flex items-center space-x-1"
+                        >
+                            {/* <div className="relative flex-none h-12 w-12 -ml-6">
+                                <BlurImage
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    style={{ objectFit: 'contain' }}
+                                    src={`${theme === 'dark' ? '/assets/images/gazaAidSync_Logo-icon-green.png' : '/assets/images/gazaAidSync_Logo-icon.png'}`}
+                                    alt="Gaza Aid Sync Logo"
+                                />
+                            </div> */}
+                            <h1 className="text-xl font-bold">Gaza Aid Sync</h1>
+                        </Link>
+                        <Badge variant="destructive" className="rounded-md uppercase">
+                            {/* A Point as Live Indicator */}
+                            <span className="relative inline-flex items-center mr-2">
+                                <span className="absolute -top-1 -left-0.5 h-2 w-2 rounded-full bg-green-300 inline-block animate-ping" />
+                                <span className="absolute -top-1 -left-0.5 h-2 w-2 rounded-full bg-green-400 inline-block" />
+                                {/* <span className="h-2 w-2 rounded-full bg-red-300 inline-block mr-1 animate-ping" /> */}
+                            </span>
+                            Live
+                        </Badge>
                     </CardTitle>
                     <Button
                         size="icon"
