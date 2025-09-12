@@ -1,7 +1,7 @@
 [![ReadMeSupportPalestine](https://raw.githubusercontent.com/Safouene1/support-palestine-banner/master/banner-support.svg)](https://donate.unrwa.org/int/en/general)
 
 # Gaza AidSync 🇵🇸
-[![StandWithPalestine](https://raw.githubusercontent.com/Safouene1/support-palestine-banner/master/StandWithPalestine.svg)](https://techforpalestine.org/learn-more)
+[![StandWithPalestine](https://raw.githubusercontent.com/Safouene1/support-palestine-banner/master/StandWithPalestine.svg)](https://github.com/Safouene1/support-palestine-banner)
 
 
 **A public web platform for tracking humanitarian aid, live news, raising global awareness, and empowering action for civilians in Gaza.**  
