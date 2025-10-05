@@ -1,0 +1,193 @@
+/* From uiverse.io by @pedertanberg */
+.loader {
+    display: inline-block;
+    position: relative;
+    width: 5px;
+    height: 5px;
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+    -webkit-transform-origin: 12px 5px 0;
+    transform-origin: 12px 5px 0;
+    }
+    
+    .loader span {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: rgb(20, 245, 0);
+    -webkit-animation: loader45 1.2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+    animation: loader45 1.2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+    }
+    
+    .loader span:after,
+    .loader span:before {
+    content: " ";
+    position: absolute;
+    display: block;
+    width: 10px;
+    height: 10px;
+    background: rgb(20, 245, 0)
+    }
+    
+    .loader span:before {
+    left: -5px;
+    border-radius: 50% 0 0 50%;
+    }
+    
+    .loader span:after {
+    top: -5px;
+    border-radius: 50% 50% 0 0;
+    }
+    
+    @-webkit-keyframes loader45 {
+    0% {
+        transform: scale(0.95);
+        -ms-transform: scale(0.95);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.95);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    5% {
+        transform: scale(1.1);
+        -ms-transform: scale(1.1);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(1.1);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    39% {
+        transform: scale(0.85);
+        -ms-transform: scale(0.85);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.85);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    45% {
+        transform: scale(1);
+        -ms-transform: scale(1);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(1);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    60% {
+        transform: scale(0.95);
+        -ms-transform: scale(0.95);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.95);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    100% {
+        transform: scale(0.9);
+        -ms-transform: scale(0.9);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.9);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    }
+  
+  
+  @-o-webkit-keyframes loader45 {
+    0% {
+        transform: scale(0.95);
+        -ms-transform: scale(0.95);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.95);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    5% {
+        transform: scale(1.1);
+        -ms-transform: scale(1.1);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(1.1);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    39% {
+        transform: scale(0.85);
+        -ms-transform: scale(0.85);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.85);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    45% {
+        transform: scale(1);
+        -ms-transform: scale(1);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(1);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    60% {
+        transform: scale(0.95);
+        -ms-transform: scale(0.95);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.95);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    100% {
+        transform: scale(0.9);
+        -ms-transform: scale(0.9);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.9);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+  }
+  
+  
+  @keyframes loader45 {
+    0% {
+        transform: scale(0.95);
+        -ms-transform: scale(0.95);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.95);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    5% {
+        transform: scale(1.1);
+        -ms-transform: scale(1.1);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(1.1);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    39% {
+        transform: scale(0.85);
+        -ms-transform: scale(0.85);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.85);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    45% {
+        transform: scale(1);
+        -ms-transform: scale(1);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(1);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    60% {
+        transform: scale(0.95);
+        -ms-transform: scale(0.95);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.95);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+    
+    100% {
+        transform: scale(0.9);
+        -ms-transform: scale(0.9);
+        /* added vendor specific css (IE) */
+        -webkit-transform: scale(0.9);
+        /* added vendor specific css (Safari, Opera , Chrome) */
+    }
+  }
+  

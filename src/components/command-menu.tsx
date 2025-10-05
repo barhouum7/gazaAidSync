@@ -53,7 +53,7 @@ export function CommandMenu() {
         <>
             <Button
                 variant="outline"
-                className="relative h-9 w-9 p-0 lg:h-10 lg:w-60 lg:justify-start lg:px-3 lg:py-2"
+                className="relative h-9 w-9 p-0 lg:h-10 lg:w-40 lg:justify-start lg:px-3 lg:py-2"
                 onClick={() => setOpen(true)}
             >
                 <Search className="h-4 w-4 lg:mr-2" />

@@ -3,6 +3,7 @@
 @import "tw-animate-css";
 
 @import '../styles/map.css';
+@import '../styles/animations.css';
 
 @plugin '../../hero.ts';
 /* // Note: You may need to change the path to fit your project structure */

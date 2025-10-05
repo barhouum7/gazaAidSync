@@ -218,7 +218,7 @@ export default function MapSidebar() {
                     {/* Action Buttons */}
                     <div className="space-y-2">
                         <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
-                            <Link href="https://unrwa.org/donate" target="_blank">
+                            <Link href="https://donate.unrwa.org/int/en/gaza" target="_blank">
                                 Donate to UNRWA
                             </Link>
                         </Button>
