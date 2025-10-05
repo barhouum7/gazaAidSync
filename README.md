@@ -1,6 +1,10 @@
-# Gaza AidSync 🇵🇸
+[![ReadMeSupportPalestine](https://raw.githubusercontent.com/Safouene1/support-palestine-banner/master/banner-support.svg)](https://donate.unrwa.org/int/en/general)
 
-**A public web platform for tracking humanitarian aid, raising global awareness, and empowering action for civilians in Gaza.**  
+# Gaza AidSync 🇵🇸
+[![StandWithPalestine](https://raw.githubusercontent.com/Safouene1/support-palestine-banner/master/StandWithPalestine.svg)](https://github.com/Safouene1/support-palestine-banner)
+
+
+**A public web platform for tracking humanitarian aid, live news, raising global awareness, and empowering action for civilians in Gaza.**  
 Built open-source for transparency, collaboration, and impact.
 
 ## 🧭 Live App
@@ -65,3 +69,5 @@ We welcome contributions, especially from:
 ## 📄 License
 MIT License.
 Built by [@barhouum7](https://github.com/barhouum7) with ❤️ in solidarity with Gaza.
+
+### [support-palestine-banner By @Safouene1](https://github.com/Safouene1/support-palestine-banner)
