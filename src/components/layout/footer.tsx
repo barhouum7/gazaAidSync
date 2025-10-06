@@ -11,11 +11,11 @@ const Footer = () => {
       <div className="w-full px-6 flex flex-col items-center justify-between gap-4 md:h-14 md:flex-row">
         <p className="text-sm text-muted-foreground text-center md:text-left leading-relaxed max-w-xl">
           Built with 
-          <span className="loader inline-block mt-2 -mr-2.5 ml-1 align-middle">
-            <span></span>
-          </span>
-            <span className='inline-block align-middle text-red-500 animate-pulse ml-1'>
-                ❤️
+            <span className="loader inline-block mt-2 -mr-2.5 ml-1 align-middle">
+              <span className='animate-pulse'></span>
+            </span>
+            <span className='inline-block align-middle text-red-500 mb-0.5 mr-0.5 ml-1'>
+              ❤️
             </span>
           by{" "}
           <a
