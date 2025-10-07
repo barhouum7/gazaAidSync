@@ -218,8 +218,8 @@ export default function MapSidebar() {
                     {/* Action Buttons */}
                     <div className="space-y-2">
                         <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
-                            <Link href="https://donate.unrwa.org/int/en/gaza" target="_blank">
-                                Donate to UNRWA
+                            <Link href="https://nowpayments.io/donation?api_key=72082d2c-8cea-4b6a-bb94-ff160e12477f" target="_blank">
+                                Donate to Gaza
                             </Link>
                         </Button>
                         <Button asChild variant="outline" className="w-full">
@@ -234,7 +234,15 @@ export default function MapSidebar() {
                             </Link>
                         </Button>
 
-                        <iframe width="100%" height="380" src="https://chuffed.org/iframe/131443/25aae1" allowFullScreen style={{maxWidth: '310px', border: '0px solid #fff', margin: '0 auto'}}></iframe>
+                    {/* Donation iframe */}
+  <div className="w-full max-w-md mx-auto">
+    <iframe
+      className="w-full h-[380px] border-0"
+      src="https://nowpayments.io/embeds/donation-widget?api_key=72082d2c-8cea-4b6a-bb94-ff160e12477f"
+      allowFullScreen
+    ></iframe>
+  </div>
+
                     </div>
                 </div>
             </CardContent>
