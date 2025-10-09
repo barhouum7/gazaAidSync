@@ -6,7 +6,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { useMapState } from "@/hooks/use-map-state";
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useLiveNewsData } from "@/hooks/use-live-news-data";
 import BlurImage from "../ui/blur-image";
 import { useTheme } from "next-themes";
+import DonationModal from "../donation-modal";
 
 export default function MapSidebar() {
     const { theme } = useTheme();
@@ -23,6 +24,8 @@ export default function MapSidebar() {
     const [showMore, setShowMore] = useState(false);
     // State to manage refreshing
     const [isRefreshing, setIsRefreshing] = useState(false);
+    // State to manage donation modal
+    const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
     const { data, loading: newsLoading, error: newsError } = useLiveNewsData();
 
     const {
@@ -216,36 +219,38 @@ export default function MapSidebar() {
                     </Alert>
 
                     {/* Action Buttons */}
-                    <div className="space-y-2">
-                        <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
-                            <Link href="https://nowpayments.io/donation?api_key=72082d2c-8cea-4b6a-bb94-ff160e12477f" target="_blank">
-                                Donate to Gaza
+                    <div className="space-y-3">
+                        <Button 
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3"
+                            onClick={() => setIsDonationModalOpen(true)}
+                        >
+                            💝 Donate to Gaza
+                        </Button>
+                        <Button asChild variant="outline" className="w-full border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-950">
+                            <Link href="https://www.wfp.org/emergencies/palestine-emergency" target="_blank" className="flex items-center justify-center gap-2">
+                                <span>Support WFP Gaza</span>
+                                <ExternalLink className="h-4 w-4" />
                             </Link>
                         </Button>
-                        <Button asChild variant="outline" className="w-full">
-                            <Link href="https://www.wfp.org/emergencies/palestine-emergency" target="_blank">
-                                Support WFP Gaza
-                            </Link>
-                        </Button>
-                        <Button asChild variant="outline" className="w-full">
+                        <Button asChild variant="outline" className="w-full border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-950">
                             <Link href="/take-action" className="flex items-center justify-center gap-2">
                                 <span>Take Action</span>
                                 <ArrowRight className="h-4 w-4" />
                             </Link>
                         </Button>
 
-                    {/* Donation iframe */}
-  <div className="w-full max-w-md mx-auto">
-    <iframe
-      className="w-full h-[380px] border-0"
-      src="https://nowpayments.io/embeds/donation-widget?api_key=72082d2c-8cea-4b6a-bb94-ff160e12477f"
-      allowFullScreen
-    ></iframe>
-  </div>
+                        {/* Gaza With Malek Fedha's fund raise */}
+                        <iframe width="100%" height="380" src="https://chuffed.org/iframe/131443/25aae1" allowFullScreen style={{maxWidth: '310px', border: '0px solid #fff', margin: '0 auto'}}></iframe>
 
                     </div>
                 </div>
             </CardContent>
+            
+            {/* Donation Modal */}
+            <DonationModal 
+                isOpen={isDonationModalOpen} 
+                onClose={() => setIsDonationModalOpen(false)} 
+            />
         </Card>
     );
 }

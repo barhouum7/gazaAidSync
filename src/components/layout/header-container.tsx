@@ -126,65 +126,66 @@ const HeaderContainer = () => {
           <MainNav />
 
           {/* Actions */}
-          <div className="flex items-center space-x-3">
-            <TooltipProvider>
-              <div className="hidden md:flex items-center space-x-2">
-                {/* Help */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link href="/help" aria-label="Help">
-                        <HelpCircle className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Help</TooltipContent>
-                </Tooltip>
+            <div className="flex items-center space-x-3">
+                <TooltipProvider>
+                    <div className="hidden md:flex items-center space-x-2">
+                        {/* Help */}
+                        <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" asChild>
+                            <Link href="/help" aria-label="Help">
+                                <HelpCircle className="h-4 w-4" />
+                            </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Help</TooltipContent>
+                        </Tooltip>
 
-                {/* Settings */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link href="/settings" aria-label="Settings">
-                        <Settings className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Settings</TooltipContent>
-                </Tooltip>
+                        {/* Settings */}
+                        <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" asChild>
+                            <Link href="/settings" aria-label="Settings">
+                                <Settings className="h-4 w-4" />
+                            </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Settings</TooltipContent>
+                        </Tooltip>
 
-                {/* GitHub CTA */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href={repoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onMouseEnter={() => setHover(true)}
-                      onMouseLeave={() => setHover(false)}
-                      aria-label={`View ${repo} on GitHub`}
-                      className={cn(
-                        "flex items-center px-3 py-1.5 rounded-full border border-border text-xs font-medium transition-all duration-300 select-none",
-                        (hover || autoFlip)
-                          ? "bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white shadow-md"
-                          : "bg-background text-muted-foreground hover:border-green-500 hover:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
-                      )}
-                    >
-                      <Github className="h-4 w-4 mr-2" />
-                      <span className="transition-all duration-300">
-                        {(hover || autoFlip)
-                          ? "⭐ Star on GitHub"
-                          : `${displayStats.stars.toLocaleString()} ★ | ${displayStats.forks.toLocaleString()} ⑂`}
-                      </span>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>View & contribute on GitHub</TooltipContent>
-                </Tooltip>
-              </div>
-            </TooltipProvider>
+                    </div>
+                    
+                    {/* GitHub CTA */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Link
+                            href={repoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onMouseEnter={() => setHover(true)}
+                            onMouseLeave={() => setHover(false)}
+                            aria-label={`View ${repo} on GitHub`}
+                            className={cn(
+                                "flex items-center px-3 py-1.5 rounded-full border border-border text-xs font-medium transition-all duration-300 select-none",
+                                (hover || autoFlip)
+                                ? "bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white shadow-md"
+                                : "bg-background text-muted-foreground hover:border-green-500 hover:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                            )}
+                            >
+                            <Github className="h-4 w-4 mr-2" />
+                            <span className="transition-all duration-300">
+                                {(hover || autoFlip)
+                                ? "⭐ Star on GitHub"
+                                : `${displayStats.stars.toLocaleString()} ★ | ${displayStats.forks.toLocaleString()} ⑂`}
+                            </span>
+                            </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>View & contribute on GitHub</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
 
-            <CommandMenu />
-            <UserNav />
+                <CommandMenu />
+                <UserNav />
           </div>
         </div>
       </header>

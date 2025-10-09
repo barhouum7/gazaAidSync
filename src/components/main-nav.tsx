@@ -62,7 +62,7 @@ export function MainNav() {
                     href="/"
                     className="flex items-center space-x-1"
                 >
-                    <div className="relative flex-none h-12 w-12 -ml-4 mt-2">
+                    <div className="relative flex-none h-12 w-12 -ml-28 md:-ml-4 mt-2">
                         <BlurImage
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
