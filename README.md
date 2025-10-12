@@ -41,6 +41,32 @@ Built in response to the ongoing humanitarian crisis in Gaza, this platform offe
 - `Prisma ORM` + `Neon DB (PostgreSQL)`
 - `Clerk` for authentication
 
+
+### 🧩 PM2 Auto-Restart Script
+The `/scripts/startup.sh` file ensures that PM2 automatically restores all processes
+after a server reboot. 
+
+### Usage
+To manually trigger the script (useful for testing):
+```bash
+bash scripts/startup.sh
+
+
+#### Automation
+
+To make sure it runs automatically after every reboot, add it to your crontab:
+
+```bash
+@reboot bash /home/gaza/htdocs/www.gaza.family/scripts/startup.sh >/dev/null 2>&1
+
+#### Notes
+
+> Make sure your .env file is properly configured before running.
+
+> Run pm2 save after starting your app to persist the process list.
+
+
+
 ## 🔄 Roadmap
 - MVP: Live app with map + dashboards + basic reports
 - Enable user-submitted reports (with moderation)
