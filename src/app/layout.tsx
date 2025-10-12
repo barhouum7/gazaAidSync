@@ -20,6 +20,7 @@ import ResizableSidebar from "@/components/layout/resizable-sidebar";
 import MapSidebar from "@/components/map/map-sidebar";
 import SidebarWrapper from "@/components/sidebar-wrapper";
 import LoaderBar from "@/components/ui/loader-bar";
+import { DomainMigrationNotification } from "@/components/domain-migration-notification";
 
 
 export const viewport: Viewport = {
@@ -75,10 +76,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en",
     siteName: "Gaza Aid Sync",
-    url: "https://gaza-aid-sync.vercel.app",
+    url: "https://www.gaza.family",
     images: [
       {
-        url: "https://gaza-aid-sync.vercel.app/og-image.png",
+        url: "https://www.gaza.family/og-image.png",
         width: 1200,
         height: 630,
         alt: "Gaza Aid Sync - Humanitarian Aid Tracking",
@@ -92,7 +93,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: [
       {
-        url: "https://gaza-aid-sync.vercel.app/og-image.png",
+        url: "https://www.gaza.family/og-image.png",
         width: 1200,
         height: 630,
         alt: "Gaza Aid Sync - Humanitarian Aid Tracking",
@@ -207,6 +208,9 @@ export default function RootLayout({
               showAtBottom={false}
             />
             <div className="relative z-10">
+              {/* Domain Migration Notification */}
+              <DomainMigrationNotification />
+              
               <LayoutStateProvider>
                 {/* Sidebar */}
                 <div className="flex-shrink-0">
