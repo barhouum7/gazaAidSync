@@ -50,7 +50,7 @@ after a server reboot.
 To manually trigger the script (useful for testing):
 ```bash
 bash scripts/startup.sh
-
+```
 
 #### Automation
 
@@ -58,6 +58,7 @@ To make sure it runs automatically after every reboot, add it to your crontab:
 
 ```bash
 @reboot bash /home/gaza/htdocs/www.gaza.family/scripts/startup.sh >/dev/null 2>&1
+```
 
 #### Notes
 
