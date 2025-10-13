@@ -21,6 +21,7 @@ import MapSidebar from "@/components/map/map-sidebar";
 import SidebarWrapper from "@/components/sidebar-wrapper";
 import LoaderBar from "@/components/ui/loader-bar";
 import { DomainMigrationNotification } from "@/components/domain-migration-notification";
+import FreePalestineBanner from "@/components/ui/free-palestine-banner";
 
 
 export const viewport: Viewport = {
@@ -220,6 +221,9 @@ export default function RootLayout({
 
                 <div className="w-full">
                   <MainContentWrapper>
+                    {/* Free Palestine Banner */}
+                    <FreePalestineBanner />
+
                     {/* Header */}
                     <HeaderContainer />
 
