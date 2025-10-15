@@ -1,0 +1,48 @@
+name: 🚀 Deploy GazaAidSync to VPS
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Connection
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Deploy to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -e
+          cd ~/htdocs/www.gaza.family
+
+          echo "🔁 Pulling latest changes..."
+          git pull origin main
+
+          echo "📦 Installing dependencies..."
+          npm install --legacy-peer-deps --omit=dev
+
+          echo "⚙️ Building Next.js app..."
+          npm run build
+
+          echo "🚀 Restarting PM2 process..."
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
+
+          echo "✅ Deployment complete!"
+          EOF
