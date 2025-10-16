@@ -16,11 +16,11 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
-      # 1️⃣ Checkout the latest code
+      # 1️⃣ Checkout repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Cache dependencies for faster builds
+      # 2️⃣ Cache dependencies for faster CI builds
       - name: Cache node_modules
         uses: actions/cache@v4
         with:
@@ -29,55 +29,61 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      # 3️⃣ Setup Node.js environment
+      # 3️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      # 4️⃣ Install dependencies
+      # 4️⃣ Install all dependencies
       - name: Install Dependencies
-        run: npm ci --omit=dev --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
-      # 5️⃣ Build your Next.js app
+      # 5️⃣ Generate Prisma Client
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      # 6️⃣ Build Next.js App
       - name: Build Next.js App
         run: npm run build
 
-      # 6️⃣ Setup SSH for VPS connection
+      # 7️⃣ Remove dev dependencies (to reduce deploy size)
+      - name: Prune Dev Dependencies
+        run: npm prune --production
+
+      # 8️⃣ Setup SSH connection
       - name: Setup SSH Connection
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
-      # 7️⃣ Sync files to VPS via rsync (fast + incremental)
-      - name: Deploy Files to VPS
+      # 9️⃣ Sync only built production files (super fast deploy)
+      - name: Deploy to VPS
         run: |
-          echo "📦 Deploying files to VPS..."
+          echo "📦 Deploying optimized build to VPS..."
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no" \
             --exclude='.git' \
-            --exclude='node_modules' \
             --exclude='.github' \
-            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/htdocs/www.gaza.family/
+            --exclude='*.log' \
+            --exclude='scripts' \
+            .next/ package.json package-lock.json public prisma node_modules \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/htdocs/www.gaza.family/
 
-      # 8️⃣ Run build/start commands remotely
-      - name: Run Remote Commands
+      # 🔟 Restart PM2 remotely
+      - name: Restart PM2 Process
         run: |
-          echo "⚙️ Running post-deploy steps on VPS..."
+          echo "🚀 Restarting PM2 on VPS..."
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             set -e
             cd ~/htdocs/www.gaza.family
 
-            echo "📦 Installing dependencies (production only)..."
-            npm ci --omit=dev --legacy-peer-deps
-
-            echo "⚙️ Building Next.js app..."
-            npm run build
-
-            echo "🚀 Restarting PM2 process..."
+            echo "🔧 Ensuring correct Node environment..."
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+            echo "♻️ Restarting app..."
             pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
 
             echo "✅ Deployment complete!"
