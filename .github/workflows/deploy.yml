@@ -16,33 +16,69 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
+      # 1️⃣ Checkout the latest code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Cache dependencies for faster builds
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 3️⃣ Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # 4️⃣ Install dependencies
+      - name: Install Dependencies
+        run: npm ci --omit=dev --legacy-peer-deps
+
+      # 5️⃣ Build your Next.js app
+      - name: Build Next.js App
+        run: npm run build
+
+      # 6️⃣ Setup SSH for VPS connection
       - name: Setup SSH Connection
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
-      - name: Deploy to VPS
+      # 7️⃣ Sync files to VPS via rsync (fast + incremental)
+      - name: Deploy Files to VPS
         run: |
+          echo "📦 Deploying files to VPS..."
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.github' \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/htdocs/www.gaza.family/
+
+      # 8️⃣ Run build/start commands remotely
+      - name: Run Remote Commands
+        run: |
+          echo "⚙️ Running post-deploy steps on VPS..."
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          set -e
-          cd ~/htdocs/www.gaza.family
+            set -e
+            cd ~/htdocs/www.gaza.family
 
-          echo "🔁 Pulling latest changes..."
-          git pull origin main
+            echo "📦 Installing dependencies (production only)..."
+            npm ci --omit=dev --legacy-peer-deps
 
-          echo "📦 Installing dependencies..."
-          npm install --legacy-peer-deps --omit=dev
+            echo "⚙️ Building Next.js app..."
+            npm run build
 
-          echo "⚙️ Building Next.js app..."
-          npm run build
+            echo "🚀 Restarting PM2 process..."
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
 
-          echo "🚀 Restarting PM2 process..."
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
-
-          echo "✅ Deployment complete!"
+            echo "✅ Deployment complete!"
           EOF
