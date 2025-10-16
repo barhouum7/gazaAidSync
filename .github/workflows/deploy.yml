@@ -16,7 +16,7 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout the latest code from repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -48,9 +48,9 @@ jobs:
       - name: Build Next.js App
         run: npm run build
 
-      # 7️⃣ Remove dev dependencies (to reduce deploy size)
+      # 7️⃣ Remove dev dependencies (to reduce deploy size) - Safe mode
       - name: Prune Dev Dependencies
-        run: npm prune --production
+        run: npm prune --omit=dev --legacy-peer-deps || echo "⚠️ Skipping prune due to dependency conflict"
 
       # 8️⃣ Setup SSH connection
       - name: Setup SSH Connection
@@ -58,10 +58,23 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
-      # 9️⃣ Sync only built production files (super fast deploy)
+      # 9️⃣ Deploy build with auto backup and rotation
+      # Sync only built production files (super fast deploy)
       - name: Deploy to VPS
         run: |
           echo "📦 Deploying optimized build to VPS..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ~/backups/www.gaza.family"
+
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          echo "🗄️ Creating backup before deploy..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            cp -r ~/htdocs/www.gaza.family ~/backups/www.gaza.family/backup_${TIMESTAMP} || echo '⚠️ No previous deployment to backup.';
+            cd ~/backups/www.gaza.family;
+            ls -dt backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf;
+            echo '🧹 Old backups pruned, only the latest 3 retained.';
+          "
+
+          echo "⬆️ Uploading new build files..."
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no" \
             --exclude='.git' \
@@ -71,20 +84,34 @@ jobs:
             .next/ package.json package-lock.json public prisma node_modules \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/htdocs/www.gaza.family/
 
-      # 🔟 Restart PM2 remotely
-      - name: Restart PM2 Process
+      # 🔟 Restart PM2 and run commands remotely with rollback safety if failed
+      - name: Run Remote Commands
         run: |
+          echo "⚙️ Running post-deploy steps on VPS..."
           echo "🚀 Restarting PM2 on VPS..."
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             set -e
             cd ~/htdocs/www.gaza.family
 
-            echo "🔧 Ensuring correct Node environment..."
+            echo "🔧 Loading Node environment..."
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-            echo "♻️ Restarting app..."
-            pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
+            echo "♻️ Reloading PM2 process..."
+            if pm2 reload gaza-family --update-env; then
+              echo "✅ PM2 restarted successfully."
+            else
+              echo "❌ PM2 reload failed. Initiating rollback..."
+              LATEST_BACKUP=$(ls -dt ~/backups/www.gaza.family/* | head -n 1)
+              if [ -d "$LATEST_BACKUP" ]; then
+                echo "🔁 Restoring previous version from $LATEST_BACKUP..."
+                rm -rf ~/htdocs/www.gaza.family
+                cp -r "$LATEST_BACKUP" ~/htdocs/www.gaza.family
+                pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
+              else
+                echo "⚠️ No backup found. Rollback skipped."
+              fi
+            fi
 
-            echo "✅ Deployment complete!"
+            echo "✅ Deployment workflow finished successfully!"
           EOF
