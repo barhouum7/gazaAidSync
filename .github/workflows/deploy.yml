@@ -36,8 +36,8 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      # 4️⃣ Install all dependencies
-      - name: Install Dependencies
+      # 4️⃣ Install all deps (including dev, for build & prisma)
+      - name: Install dependencies (for build)
         run: npm ci --legacy-peer-deps
 
       # 5️⃣ Generate Prisma Client
@@ -48,9 +48,9 @@ jobs:
       - name: Build Next.js App
         run: npm run build
 
-      # 7️⃣ Remove dev dependencies (to reduce deploy size) - Safe mode
-      - name: Prune Dev Dependencies
-        run: npm prune --omit=dev --legacy-peer-deps || echo "⚠️ Skipping prune due to dependency conflict"
+      # 7️⃣ (Optional) Try to prune dev deps locally, but ignore failure (to reduce deploy size)
+      - name: Try prune dev deps (best-effort)
+        run: npm prune --omit=dev --legacy-peer-deps || echo "⚠️ prune skipped due to conflicts"
 
       # 8️⃣ Setup SSH connection
       - name: Setup SSH Connection
@@ -60,58 +60,123 @@ jobs:
 
       # 9️⃣ Deploy build with auto backup and rotation
       # Sync only built production files (super fast deploy)
-      - name: Deploy to VPS
+      # Upload built production files to a TEMP dir on the VPS (atomic swap)
+      - name: Upload build to VPS (to temp dir)
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
-          echo "📦 Deploying optimized build to VPS..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ~/backups/www.gaza.family"
-
+          echo "📦 Starting atomic upload..."
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          echo "🗄️ Creating backup before deploy..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
-            cp -r ~/htdocs/www.gaza.family ~/backups/www.gaza.family/backup_${TIMESTAMP} || echo '⚠️ No previous deployment to backup.';
-            cd ~/backups/www.gaza.family;
-            ls -dt backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf;
-            echo '🧹 Old backups pruned, only the latest 3 retained.';
-          "
+          TMPDIR="~/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
+          REMOTE_BACKUPS_DIR="~/backups/www.gaza.family"
 
-          echo "⬆️ Uploading new build files..."
-          rsync -avz --delete \
+          # make tmpdir & backups dir
+          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "mkdir -p ${TMPDIR} ${REMOTE_BACKUPS_DIR}"
+
+          # rsync build-only artifacts into tmpdir (ignore missing files)
+          # NOTE: do NOT include node_modules here; server will install production deps in tmpdir
+          rsync -avz --delete --ignore-missing-args \
             -e "ssh -o StrictHostKeyChecking=no" \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='*.log' \
             --exclude='scripts' \
-            .next/ package.json package-lock.json public prisma node_modules \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/htdocs/www.gaza.family/
+            --exclude='node_modules' \
+            .next/ package.json package-lock.json public prisma \
+            ${VPS_USER}@${VPS_HOST}:/home/${VPS_USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}/
 
-      # 🔟 Restart PM2 and run commands remotely with rollback safety if failed
-      - name: Run Remote Commands
+      # Perform server-side install in tmpdir, swap atomically, restart pm2, rotate backups
+      - name: Swap & Activate on VPS (atomic, with rollback & backup rotation)
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
-          echo "⚙️ Running post-deploy steps on VPS..."
-          echo "🚀 Restarting PM2 on VPS..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            set -e
-            cd ~/htdocs/www.gaza.family
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          TMPDIR="/home/${VPS_USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
+          LIVEDIR="/home/${VPS_USER}/htdocs/www.gaza.family"
+          BACKUP_DIR="/home/${VPS_USER}/backups/www.gaza.family"
+          # Run remote atomic activation
+          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} <<'EOF'
+            set -euo pipefail
+            TIMESTAMP="${TIMESTAMP}"
+            TMPDIR="${TMPDIR}"
+            LIVEDIR="${LIVEDIR}"
+            BACKUP_DIR="${BACKUP_DIR}"
 
-            echo "🔧 Loading Node environment..."
+            echo "🔁 Preparing to activate build at ${TMPDIR}"
+
+            # ensure backups dir exists
+            mkdir -p "${BACKUP_DIR}"
+
+            # preserve current .env if exists
+            if [ -f "${LIVEDIR}/.env" ]; then
+              echo "🔐 Preserving existing .env to tmp build"
+              cp "${LIVEDIR}/.env" "${TMPDIR}/.env" || true
+            fi
+
+            # install production dependencies inside tmpdir
+            echo "📦 Installing production dependencies in tmp build..."
+            cd "${TMPDIR}"
+            # load nvm if present (pm2 uses nvm)
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            # Use npm ci in tmpdir to install production deps
+            npm ci --omit=dev --legacy-peer-deps
 
-            echo "♻️ Reloading PM2 process..."
-            if pm2 reload gaza-family --update-env; then
-              echo "✅ PM2 restarted successfully."
+            # sanity check: ensure build files exist
+            if [ ! -d "${TMPDIR}/.next" ]; then
+              echo "❌ Build artifact .next missing in tmpdir; aborting."
+              exit 1
+            fi
+
+            # create a backup of current live dir (if exists)
+            if [ -d "${LIVEDIR}" ]; then
+              echo "🗄️ Backing up current live site..."
+              mkdir -p "${BACKUP_DIR}"
+              cp -r "${LIVEDIR}" "${BACKUP_DIR}/backup_${TIMESTAMP}"
             else
-              echo "❌ PM2 reload failed. Initiating rollback..."
-              LATEST_BACKUP=$(ls -dt ~/backups/www.gaza.family/* | head -n 1)
-              if [ -d "$LATEST_BACKUP" ]; then
-                echo "🔁 Restoring previous version from $LATEST_BACKUP..."
-                rm -rf ~/htdocs/www.gaza.family
-                cp -r "$LATEST_BACKUP" ~/htdocs/www.gaza.family
-                pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
-              else
-                echo "⚠️ No backup found. Rollback skipped."
+              echo "ℹ️ No existing live directory to backup."
+            fi
+
+            # atomic swap: move tmpdir into place
+            echo "🔁 Swapping ${TMPDIR} -> ${LIVEDIR}"
+            # remove live dir and move new into place (we already made a backup)
+            rm -rf "${LIVEDIR}"
+            mv "${TMPDIR}" "${LIVEDIR}"
+
+            # ensure correct owner permissions (in case)
+            chown -R $(whoami):$(whoami) "${LIVEDIR}"
+
+            # reload pm2 (zero-downtime)
+            echo "♻️ Reloading PM2 process..."
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            if pm2 reload gaza-family --update-env; then
+              echo "✅ PM2 reloaded successfully."
+            else
+              echo "❌ PM2 reload failed — attempting to start or rollback..."
+              # try start, otherwise rollback
+              pm2 start npm --name "gaza-family" -- run start || true
+
+              if ! pm2 list | grep -q "gaza-family.*online"; then
+                echo "🔁 PM2 failed to start: rolling back to previous backup..."
+                LATEST_BACKUP=$(ls -dt ${BACKUP_DIR}/backup_* 2>/dev/null | head -n 1 || true)
+                if [ -n "$LATEST_BACKUP" ] && [ -d "$LATEST_BACKUP" ]; then
+                  rm -rf "${LIVEDIR}"
+                  cp -r "$LATEST_BACKUP" "${LIVEDIR}"
+                  pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
+                else
+                  echo "⚠️ No backup available — manual intervention needed!"
+                  exit 1
+                fi
               fi
             fi
 
-            echo "✅ Deployment workflow finished successfully!"
+            # rotate old backups (keep latest 3)
+            echo "🧹 Rotating backups (keep last 3)..."
+            cd "${BACKUP_DIR}"
+            ls -dt backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
+
+            echo "✅ Activation finished."
           EOF
