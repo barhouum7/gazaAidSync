@@ -139,7 +139,7 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             
             # Use npm ci in tmpdir to install production deps
-            npm ci --omit=dev --legacy-peer-deps
+            npm ci --omit=dev --legacy-peer-deps --ignore-scripts
 
             # sanity check: ensure build files exist
             if [ ! -d "${TMPDIR}/.next" ]; then
