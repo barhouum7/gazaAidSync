@@ -101,7 +101,7 @@ jobs:
         run: |
           # Run remote atomic activation
           echo "🔁 Activating new build on VPS..."
-          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} 'bash -s' <<'EOF'
+          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} 'bash -s' <<EOF
             set -euo pipefail
 
             # Use timestamp from env
