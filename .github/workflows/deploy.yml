@@ -13,7 +13,9 @@ jobs:
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    # // if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    # Note: Uncomment the above line to enable deploys on direct pushes to main branch as well as merged PRs.
 
     steps:
       # 1️⃣ Checkout the latest code from repository
@@ -96,87 +98,86 @@ jobs:
           TMPDIR="/home/${VPS_USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
           LIVEDIR="/home/${VPS_USER}/htdocs/www.gaza.family"
           BACKUP_DIR="/home/${VPS_USER}/backups/www.gaza.family"
+          
           # Run remote atomic activation
-          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} <<'EOF'
-            set -euo pipefail
-            TIMESTAMP="${TIMESTAMP}"
-            TMPDIR="${TMPDIR}"
-            LIVEDIR="${LIVEDIR}"
-            BACKUP_DIR="${BACKUP_DIR}"
+          echo "🔁 Activating new build on VPS..."
+          ssh -o StrictHostKeyChecking=no \
+            ${VPS_USER}@${VPS_HOST} "
+              set -euo pipefail
+              echo "🔁 Preparing to activate build at ${TMPDIR}"
 
-            echo "🔁 Preparing to activate build at ${TMPDIR}"
-
-            # ensure backups dir exists
-            mkdir -p "${BACKUP_DIR}"
-
-            # preserve current .env if exists
-            if [ -f "${LIVEDIR}/.env" ]; then
-              echo "🔐 Preserving existing .env to tmp build"
-              cp "${LIVEDIR}/.env" "${TMPDIR}/.env" || true
-            fi
-
-            # install production dependencies inside tmpdir
-            echo "📦 Installing production dependencies in tmp build..."
-            cd "${TMPDIR}"
-            # load nvm if present (pm2 uses nvm)
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            # Use npm ci in tmpdir to install production deps
-            npm ci --omit=dev --legacy-peer-deps
-
-            # sanity check: ensure build files exist
-            if [ ! -d "${TMPDIR}/.next" ]; then
-              echo "❌ Build artifact .next missing in tmpdir; aborting."
-              exit 1
-            fi
-
-            # create a backup of current live dir (if exists)
-            if [ -d "${LIVEDIR}" ]; then
-              echo "🗄️ Backing up current live site..."
+              # ensure backups dir exists
               mkdir -p "${BACKUP_DIR}"
-              cp -r "${LIVEDIR}" "${BACKUP_DIR}/backup_${TIMESTAMP}"
-            else
-              echo "ℹ️ No existing live directory to backup."
-            fi
 
-            # atomic swap: move tmpdir into place
-            echo "🔁 Swapping ${TMPDIR} -> ${LIVEDIR}"
-            # remove live dir and move new into place (we already made a backup)
-            rm -rf "${LIVEDIR}"
-            mv "${TMPDIR}" "${LIVEDIR}"
+              # Preserve existing .env if exists
+              if [ -f '${LIVEDIR}/.env' ]; then
+                echo '🔐 Preserving existing .env to tmp build'
+                cp '${LIVEDIR}/.env' '${TMPDIR}/.env' || true
+              fi
 
-            # ensure correct owner permissions (in case)
-            chown -R $(whoami):$(whoami) "${LIVEDIR}"
+              # install production dependencies inside tmpdir
+              echo "📦 Installing production dependencies in tmp build..."
+              cd "${TMPDIR}"
+              # load nvm if present (pm2 uses nvm)
+              export NVM_DIR="$HOME/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+              # Use npm ci in tmpdir to install production deps
+              npm ci --omit=dev --legacy-peer-deps
 
-            # reload pm2 (zero-downtime)
-            echo "♻️ Reloading PM2 process..."
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            if pm2 reload gaza-family --update-env; then
-              echo "✅ PM2 reloaded successfully."
-            else
-              echo "❌ PM2 reload failed — attempting to start or rollback..."
-              # try start, otherwise rollback
-              pm2 start npm --name "gaza-family" -- run start || true
+              # sanity check: ensure build files exist
+              if [ ! -d "${TMPDIR}/.next" ]; then
+                echo "❌ Build artifact .next missing in tmpdir; aborting."
+                exit 1
+              fi
 
-              if ! pm2 list | grep -q "gaza-family.*online"; then
-                echo "🔁 PM2 failed to start: rolling back to previous backup..."
-                LATEST_BACKUP=$(ls -dt ${BACKUP_DIR}/backup_* 2>/dev/null | head -n 1 || true)
-                if [ -n "$LATEST_BACKUP" ] && [ -d "$LATEST_BACKUP" ]; then
-                  rm -rf "${LIVEDIR}"
-                  cp -r "$LATEST_BACKUP" "${LIVEDIR}"
-                  pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
-                else
-                  echo "⚠️ No backup available — manual intervention needed!"
-                  exit 1
+              # create a backup of current live dir (if exists)
+              if [ -d "${LIVEDIR}" ]; then
+                echo "🗄️ Backing up current live site..."
+                mkdir -p "${BACKUP_DIR}"
+                cp -r "${LIVEDIR}" "${BACKUP_DIR}/backup_${TIMESTAMP}"
+              else
+                echo "ℹ️ No existing live directory to backup."
+              fi
+
+              # atomic swap: move tmpdir into place
+              echo "🔁 Swapping ${TMPDIR} -> ${LIVEDIR}"
+              # remove live dir and move new into place (we already made a backup)
+              rm -rf "${LIVEDIR}"
+              mv "${TMPDIR}" "${LIVEDIR}"
+
+              # ensure correct owner permissions (in case)
+              chown -R $(whoami):$(whoami) "${LIVEDIR}"
+
+              # reload pm2 (zero-downtime)
+              echo "♻️ Reloading PM2 process..."
+              export NVM_DIR="$HOME/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+              if pm2 reload gaza-family --update-env; then
+                echo "✅ PM2 reloaded successfully."
+              else
+                echo "❌ PM2 reload failed — attempting to start or rollback..."
+                # try start, otherwise rollback
+                pm2 start npm --name "gaza-family" -- run start || true
+
+                if ! pm2 list | grep -q "gaza-family.*online"; then
+                  echo "🔁 PM2 failed to start: rolling back to previous backup..."
+                  LATEST_BACKUP=$(ls -dt ${BACKUP_DIR}/backup_* 2>/dev/null | head -n 1 || true)
+                  if [ -n "$LATEST_BACKUP" ] && [ -d "$LATEST_BACKUP" ]; then
+                    rm -rf "${LIVEDIR}"
+                    cp -r "$LATEST_BACKUP" "${LIVEDIR}"
+                    pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
+                  else
+                    echo "⚠️ No backup available — manual intervention needed!"
+                    exit 1
+                  fi
                 fi
               fi
-            fi
 
-            # rotate old backups (keep latest 3)
-            echo "🧹 Rotating backups (keep last 3)..."
-            cd "${BACKUP_DIR}"
-            ls -dt backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
+              # rotate old backups (keep latest 3)
+              echo "🧹 Rotating backups (keep last 3)..."
+              cd "${BACKUP_DIR}"
+              ls -dt backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
 
-            echo "✅ Activation finished."
-          EOF
+              echo "✅ Activation finished."
+              echo '✅ Deployment completed successfully.'
+          "
