@@ -65,50 +65,60 @@ jobs:
       # Upload built production files to a TEMP dir on the VPS (atomic swap)
       - name: Upload build to VPS (to temp dir)
         env:
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
+            VPS_USER: ${{ secrets.VPS_USER }}
+            VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
-          echo "📦 Starting atomic upload..."
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          TMPDIR="~/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
-          REMOTE_BACKUPS_DIR="~/backups/www.gaza.family"
+            echo "📦 Starting atomic upload..."
+            TIMESTAMP=$(date +%Y%m%d%H%M%S)
+            echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV  # ✅ Export for next step
 
-          # make tmpdir & backups dir
-          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "mkdir -p ${TMPDIR} ${REMOTE_BACKUPS_DIR}"
+            TMPDIR="/home/${VPS_USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
+            REMOTE_BACKUPS_DIR="/home/${VPS_USER}/backups/www.gaza.family"
 
-          # rsync build-only artifacts into tmpdir (ignore missing files)
-          # NOTE: do NOT include node_modules here; server will install production deps in tmpdir
-          rsync -avz --delete --ignore-missing-args \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='*.log' \
-            --exclude='scripts' \
-            --exclude='node_modules' \
-            .next/ package.json package-lock.json public prisma \
-            ${VPS_USER}@${VPS_HOST}:/home/${VPS_USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}/
+            # make tmpdir & backups dir
+            echo "🛠️ Creating tmp & backup dirs on remote..."
+            ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "mkdir -p ${TMPDIR} ${REMOTE_BACKUPS_DIR}"
+
+            # rsync build-only artifacts into tmpdir (ignore missing files)
+            # NOTE: do NOT include node_modules here; server will install production deps in tmpdir
+            echo "🚀 Uploading build to ${TMPDIR}..."
+            rsync -avz --delete --ignore-missing-args \
+              -e "ssh -o StrictHostKeyChecking=no" \
+              --exclude='.git' \
+              --exclude='.github' \
+              --exclude='*.log' \
+              --exclude='scripts' \
+              --exclude='node_modules' \
+              .next/ package.json package-lock.json public prisma \
+              ${VPS_USER}@${VPS_HOST}:${TMPDIR}/
 
       # Perform server-side install in tmpdir, swap atomically, restart pm2, rotate backups
       - name: Swap & Activate on VPS (atomic, with rollback & backup rotation)
         env:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
+          TIMESTAMP: ${{ env.TIMESTAMP }}  # ✅ Reuse same timestamp
         run: |
           # Run remote atomic activation
           echo "🔁 Activating new build on VPS..."
           ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} 'bash -s' <<'EOF'
             set -euo pipefail
 
-            # generate timestamp atomically inside the remote environment
-            TIMESTAMP=$(date +%Y%m%d%H%M%S)
-            TMPDIR="/home/${USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
-            LIVEDIR="/home/${USER}/htdocs/www.gaza.family"
-            BACKUP_DIR="/home/${USER}/backups/www.gaza.family"
+            # Use timestamp from env
+            TIMESTAMP="${TIMESTAMP}"
+            TMPDIR="/home/${VPS_USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
+            LIVEDIR="/home/${VPS_USER}/htdocs/www.gaza.family"
+            BACKUP_DIR="/home/${VPS_USER}/backups/www.gaza.family"
 
             echo "🔁 Preparing to activate build at ${TMPDIR}"
 
             # ensure backups dir exists
             mkdir -p "${BACKUP_DIR}"
+
+            if [ ! -d "${TMPDIR}" ]; then
+                echo "❌ ERROR: Build directory not found (${TMPDIR})."
+                exit 1
+            fi
 
             # Preserve existing .env if exists
             if [ -f "${LIVEDIR}/.env" ]; then
