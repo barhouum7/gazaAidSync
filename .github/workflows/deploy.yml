@@ -101,11 +101,11 @@ jobs:
         run: |
           # Run remote atomic activation
           echo "🔁 Activating new build on VPS..."
-          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} 'bash -s' <<EOF
+          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} bash -s <<EOF
             set -euo pipefail
-
+            
             # Use timestamp from env
-            TIMESTAMP="${TIMESTAMP}"
+            TIMESTAMP="${{ env.TIMESTAMP }}"
             TMPDIR="/home/${VPS_USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
             LIVEDIR="/home/${VPS_USER}/htdocs/www.gaza.family"
             BACKUP_DIR="/home/${VPS_USER}/backups/www.gaza.family"
@@ -129,9 +129,11 @@ jobs:
             # install production dependencies inside tmpdir
             echo "📦 Installing production dependencies in tmp build..."
             cd "${TMPDIR}"
+
             # load nvm if present (pm2 uses nvm)
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            
             # Use npm ci in tmpdir to install production deps
             npm ci --omit=dev --legacy-peer-deps
 
@@ -152,6 +154,7 @@ jobs:
 
             # atomic swap: move tmpdir into place
             echo "🔁 Swapping ${TMPDIR} -> ${LIVEDIR}"
+            
             # remove live dir and move new into place (we already made a backup)
             rm -rf "${LIVEDIR}"
             mv "${TMPDIR}" "${LIVEDIR}"
