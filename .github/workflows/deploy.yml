@@ -89,7 +89,7 @@ jobs:
               --exclude='*.log' \
               --exclude='scripts' \
               --exclude='node_modules' \
-              .next package.json package-lock.json public prisma \
+              .next/standalone .next/static package.json package-lock.json public prisma \
               ${VPS_USER}@${VPS_HOST}:${TMPDIR}/
 
       # Perform server-side install in tmpdir, swap atomically, restart pm2, rotate backups
