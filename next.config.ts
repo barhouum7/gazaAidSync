@@ -69,6 +69,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  output: 'standalone',
   
   async headers() {
     return [
