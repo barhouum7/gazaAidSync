@@ -89,7 +89,8 @@ jobs:
               --exclude='*.log' \
               --exclude='scripts' \
               --exclude='node_modules' \
-              .next package.json package-lock.json public prisma \
+              .next src next.config.ts package.json package-lock.json public prisma \
+              components.json hero.ts next-env.d.ts postcss.config.mjs tsconfig.json eslint.config.mjs \
               ${VPS_USER}@${VPS_HOST}:${TMPDIR}/
 
       # Perform server-side install in tmpdir, swap atomically, restart pm2, rotate backups
