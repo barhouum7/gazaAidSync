@@ -38,32 +38,39 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      # 4️⃣ Install all deps (including dev, for build & prisma)
+      - name: Check if dependencies changed
+        id: deps-check
+        run: |
+          if [[ "${{ steps.cache.outputs.cache-hit }}" == 'true' ]]; then
+            echo "skip-install=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip-install=false" >> $GITHUB_OUTPUT
+          fi
+      
+      # 4️⃣ Install all deps (if cache miss)
       - name: Install dependencies (for build)
+        if: steps.deps-check.outputs.skip-install == 'false'
         run: npm ci --legacy-peer-deps
 
-      # 5️⃣ Generate Prisma Client
-      - name: Generate Prisma Client
-        run: npx prisma generate
+      # 5️⃣ Generate Prisma Client (local, optional)
+      # - name: Generate Prisma Client
+      #   run: npx prisma generate
+      
+      # Note: This step is commented out because Prisma Client will be generated during the server-side build. It's command is included in the build command itself.
 
-      # 6️⃣ Build Next.js App
-      - name: Build Next.js App
-        run: npm run build
+      # 6️⃣ (Optional) Build check — only to catch local build errors early
+      - name: Build Check (optional)
+        run: npm run build --if-present
 
-      # 7️⃣ (Optional) Try to prune dev deps locally, but ignore failure (to reduce deploy size)
-      - name: Try prune dev deps (best-effort)
-        run: npm prune --omit=dev --legacy-peer-deps || echo "⚠️ prune skipped due to conflicts"
-
-      # 8️⃣ Setup SSH connection
+      # 7️⃣ Setup SSH connection
       - name: Setup SSH Connection
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
-      # 9️⃣ Deploy build with auto backup and rotation
-      # Sync only built production files (super fast deploy)
-      # Upload built production files to a TEMP dir on the VPS (atomic swap)
-      - name: Upload build to VPS (to temp dir)
+      # Deploy build with auto backup and rotation
+      # 8️⃣ Upload source files to a TEMP dir on the VPS (atomic swap/deploy)
+      - name: Upload source to VPS (to temp dir)
         env:
             VPS_USER: ${{ secrets.VPS_USER }}
             VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -79,34 +86,31 @@ jobs:
             echo "🛠️ Creating tmp & backup dirs on remote..."
             ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "mkdir -p ${TMPDIR} ${REMOTE_BACKUPS_DIR}"
 
-            # rsync build-only artifacts into tmpdir (ignore missing files)
-            # NOTE: do NOT include node_modules here; server will install production deps in tmpdir
-            echo "🚀 Uploading build to ${TMPDIR}..."
-            rsync -avz --delete --ignore-missing-args \
+            # Upload files dynamically from .deployinclude (no hardcoding)
+            echo "🚀 Uploading source files to ${TMPDIR}..."
+            rsync -avz --delete \
               -e "ssh -o StrictHostKeyChecking=no" \
               --exclude='.git' \
               --exclude='.github' \
               --exclude='*.log' \
               --exclude='scripts' \
               --exclude='node_modules' \
-              .next src next.config.ts package.json package-lock.json public prisma \
-              components.json hero.ts next-env.d.ts postcss.config.mjs tsconfig.json eslint.config.mjs \
-              ${VPS_USER}@${VPS_HOST}:${TMPDIR}/
+              --include-from='.deployinclude' \
+              ./ ${VPS_USER}@${VPS_HOST}:${TMPDIR}/
 
-      # Perform server-side install in tmpdir, swap atomically, restart pm2, rotate backups
-      - name: Swap & Activate on VPS (atomic, with rollback & backup rotation)
+      # 9️⃣ Perform server-side build, swap atomically, restart pm2, rotate backups
+      - name: Build & Activate on VPS (atomic, with rollback & backup rotation)
         env:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           TIMESTAMP: ${{ env.TIMESTAMP }}  # ✅ Reuse same timestamp
         run: |
-          # Run remote atomic activation
-          echo "🔁 Activating new build on VPS..."
+          echo "🔁 Building & activating new version on VPS..."
 
           ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
             "bash -s -- ${TIMESTAMP}" <<'EOF'
             set -euo pipefail
-            
+
             # Use timestamp from env
             TIMESTAMP="$1"
             VPS_USER="${USER}"
@@ -115,50 +119,65 @@ jobs:
             LIVEDIR="/home/${VPS_USER}/htdocs/www.gaza.family"
             BACKUP_DIR="/home/${VPS_USER}/backups/www.gaza.family"
 
-            echo "🔁 Preparing to activate build at ${TMPDIR}"
+            echo "📂 Preparing to activate build at ${TMPDIR}"
 
-            # ensure backups dir exists
+            # Ensure backup dir exists
             mkdir -p "${BACKUP_DIR}"
 
+            # Clean up old temporary deploy directories (older than 1 day)
+            echo "🧹 Cleaning old temporary deploy directories..."
+            find /home/${VPS_USER}/htdocs -maxdepth 1 -type d -name 'www.gaza.family_deploy_*' -mtime +1 -exec rm -rf {} + || true
+
             if [ ! -d "${TMPDIR}" ]; then
-                echo "❌ ERROR: Build directory not found (${TMPDIR})."
-                exit 1
-            fi
-
-            # Preserve existing .env if exists
-            if [ -f "${LIVEDIR}/.env" ]; then
-              echo "🔐 Preserving existing .env to tmp build"
-              cp "${LIVEDIR}/.env" "${TMPDIR}/.env" || true
-            fi
-
-            # install production dependencies inside tmpdir
-            echo "📦 Installing production dependencies in tmp build..."
-            cd "${TMPDIR}"
-
-            # load nvm if present (pm2 uses nvm)
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            
-            # Use npm ci in tmpdir to install production deps
-            npm ci --omit=dev --legacy-peer-deps --ignore-scripts
-
-            # sanity check: ensure build files exist
-            if [ ! -d "${TMPDIR}/.next" ]; then
-              echo "❌ Build artifact .next missing in tmpdir; aborting."
+              echo "❌ ERROR: Temp directory not found (${TMPDIR})"
               exit 1
             fi
 
-            # create a backup of current live dir (if exists)
+            # Preserve existing .env
+            if [ -f "${LIVEDIR}/.env" ]; then
+              echo "🔐 Preserving existing .env"
+              cp "${LIVEDIR}/.env" "${TMPDIR}/.env"
+            fi
+
+            # install production dependencies inside tmpdir
+            echo "📦 Installing production dependencies in tmp and building on VPS..."
+            cd "${TMPDIR}"
+
+            # Load Node version via nvm (pm2 uses nvm)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+
+            # 🧠 Smart install: skip if no deps changed
+            if [ -f "$LIVEDIR/package-lock.json" ] && cmp -s package-lock.json "$LIVEDIR/package-lock.json"; then
+              echo "✅ No dependency changes — skipping npm ci"
+            else
+              echo "📦 Installing dependencies..."
+              npm ci --legacy-peer-deps
+            fi
+
+            echo "⚙️ Generating Prisma client..."
+            # npx prisma generate || echo "⚠️ Prisma generate failed (ignored)" # We'll comment this command out since it'll be run during build command next
+
+            echo "🏗️ Building Next.js app..."
+            npm run build
+
+
+            # sanity check: ensure build files exist
+            if [ ! -d ".next" ]; then
+              echo "❌ Build artifact .next missing in tmpdir. Aborting."
+              exit 1
+            fi
+
+            # Backup current live version
             if [ -d "${LIVEDIR}" ]; then
               echo "🗄️ Backing up current live site..."
               mkdir -p "${BACKUP_DIR}"
               cp -r "${LIVEDIR}" "${BACKUP_DIR}/backup_${TIMESTAMP}"
-            else
-              echo "ℹ️ No existing live directory to backup."
             fi
 
             # atomic swap: move tmpdir into place
-            echo "🔁 Swapping ${TMPDIR} -> ${LIVEDIR}"
+            echo "🔁 Swapping ${TMPDIR} → ${LIVEDIR}"
             # remove live dir and move new into place (we already made a backup)
             rm -rf "${LIVEDIR}"
             mv "${TMPDIR}" "${LIVEDIR}"
@@ -167,13 +186,14 @@ jobs:
             chown -R $(whoami):$(whoami) "${LIVEDIR}"
 
             # reload pm2 (zero-downtime)
-            echo "♻️ Reloading PM2 process..."
+            echo "♻️ Restarting PM2 process..."
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
             if pm2 reload gaza-family --update-env; then
               echo "✅ PM2 reloaded successfully."
             else
-              echo "❌ PM2 reload failed — attempting to start or rollback..."
+              echo "⚠️ PM2 reload failed, attempting fresh start..."
               # try start, otherwise rollback
               pm2 start npm --name "gaza-family" -- run start || true
 
@@ -185,17 +205,16 @@ jobs:
                   cp -r "$LATEST_BACKUP" "${LIVEDIR}"
                   pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
                 else
-                  echo "⚠️ No backup available — manual intervention needed!"
+                  echo "⚠️ No backup found — manual fix needed!"
                   exit 1
                 fi
               fi
             fi
 
-            # rotate old backups (keep latest 3)
-            echo "🧹 Rotating backups (keep last 3)..."
+            # Rotate backups (keep 3 latest)
+            echo "🧹 Cleaning old backups..."
             cd "${BACKUP_DIR}"
             ls -dt backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
 
-            echo "✅ Activation finished."
             echo "✅ Deployment completed successfully."
           EOF

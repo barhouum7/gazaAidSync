@@ -1,0 +1,23 @@
+# .deployinclude
+# Include only needed build/runtime files for production
+
+# Directories
+.next/
+public/
+prisma/
+src/
+
+# Config
+next.config.ts
+package.json
+package-lock.json
+
+# Misc
+*.mjs
+*.json
+*.ts
+*.js
+*.d.ts
+
+# Keep the env placeholder (copied later on VPS)
+!.env
