@@ -22,92 +22,120 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Cache dependencies for faster CI builds
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      # 3️⃣ Setup Node.js
+      # 2️⃣ Setup Node.js with built-in npm caching
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      - name: Check if dependencies changed
-        id: deps-check
-        run: |
-          if [[ "${{ steps.cache.outputs.cache-hit }}" == 'true' ]]; then
-            echo "skip-install=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip-install=false" >> $GITHUB_OUTPUT
-          fi
-      
-      # 4️⃣ Install all deps (if cache miss)
-      - name: Install dependencies (for build)
-        if: steps.deps-check.outputs.skip-install == 'false'
-        run: npm ci --legacy-peer-deps
+      # 3️⃣ Install dependencies (cached by setup-node)
+      # Do we really need to install here if we build on server? Yes, to validate code and catch errors early.
+      # This step ensures that the code is valid and dependencies are correct before deployment. If there are issues, they are caught early in the CI process.
+      # It also allows us to run any pre-deployment scripts or checks if needed in the future.
+      # It's a good practice to validate the build locally before deploying to avoid deploying broken code.
+      # However, the actual production dependencies will be installed on the server during deployment, and we already handling rollback there in case of failures.
+      # We can comment out this step if we want to speed up the workflow and rely solely on server-side build validation.
+      # - name: Install dependencies
+      #   run: npm ci --legacy-peer-deps
 
-      # 5️⃣ Generate Prisma Client (local, optional)
-      # - name: Generate Prisma Client
-      #   run: npx prisma generate
-      
-      # Note: This step is commented out because Prisma Client will be generated during the server-side build. It's command is included in the build command itself.
-
-      # 6️⃣ (Optional) Build check — only to catch local build errors early
-      - name: Build Check (optional)
-        run: npm run build --if-present
-
-      # 7️⃣ Setup SSH connection
+      # 4️⃣ Setup SSH connection
       - name: Setup SSH Connection
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
+      # 5️⃣  Upload & deploy steps
       # Deploy build with auto backup and rotation
-      # 8️⃣ Upload source files to a TEMP dir on the VPS (atomic swap/deploy)
+      # Upload source files to a TEMP dir on the VPS (atomic swap/deploy)
       - name: Upload source to VPS (to temp dir)
         env:
             VPS_USER: ${{ secrets.VPS_USER }}
             VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
+            set -euo pipefail  # Exit on any error
+            
             echo "📦 Starting atomic upload..."
+            echo "🔍 Validating environment variables..."
+            
+            # Validate required secrets
+            if [ -z "${VPS_USER}" ] || [ -z "${VPS_HOST}" ]; then
+              echo "❌ ERROR: VPS_USER or VPS_HOST secrets are not set!"
+              exit 1
+            fi
+            
             TIMESTAMP=$(date +%Y%m%d%H%M%S)
             echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV  # ✅ Export for next step
+            echo "⏰ Deployment timestamp: ${TIMESTAMP}"
 
             TMPDIR="/home/${VPS_USER}/htdocs/www.gaza.family_deploy_${TIMESTAMP}"
             REMOTE_BACKUPS_DIR="/home/${VPS_USER}/backups/www.gaza.family"
 
+            # Test SSH connection first
+            echo "🔐 Testing SSH connection..."
+            if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${VPS_USER}@${VPS_HOST} "echo 'SSH connection successful'"; then
+              echo "❌ ERROR: Cannot connect to VPS via SSH!"
+              exit 1
+            fi
+
             # make tmpdir & backups dir
             echo "🛠️ Creating tmp & backup dirs on remote..."
-            ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "mkdir -p ${TMPDIR} ${REMOTE_BACKUPS_DIR}"
+            if ! ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "mkdir -p ${TMPDIR} ${REMOTE_BACKUPS_DIR}"; then
+              echo "❌ ERROR: Failed to create directories on VPS!"
+              exit 1
+            fi
 
             # Upload files dynamically from .deployinclude (no hardcoding)
             echo "🚀 Uploading source files to ${TMPDIR}..."
-            rsync -avz --delete \
+            
+            # Validate .deployinclude exists
+            if [ ! -f ".deployinclude" ]; then
+              echo "❌ ERROR: .deployinclude file not found!"
+              echo "📝 Please create a .deployinclude file with the files/directories to deploy"
+              exit 1
+            fi
+            
+            echo "📋 Files to deploy (from .deployinclude):"
+            cat .deployinclude | grep -v '^#' | grep -v '^$' || echo "⚠️ No files specified in .deployinclude"
+            # Perform rsync upload with exclusions and include-from
+            if ! rsync -avz --delete \
               -e "ssh -o StrictHostKeyChecking=no" \
               --exclude='.git' \
               --exclude='.github' \
               --exclude='*.log' \
               --exclude='scripts' \
               --exclude='node_modules' \
+              --exclude='.next' \
+              --exclude='coverage' \
+              --exclude='*.test.*' \
+              --exclude='*.spec.*' \
               --include-from='.deployinclude' \
-              ./ ${VPS_USER}@${VPS_HOST}:${TMPDIR}/
+              ./ ${VPS_USER}@${VPS_HOST}:${TMPDIR}/; then
+              echo "❌ ERROR: File upload failed!"
+              exit 1
+            fi
+            
+            echo "✅ File upload completed successfully"
 
-      # 9️⃣ Perform server-side build, swap atomically, restart pm2, rotate backups
+      # 6️⃣ Build & activate on VPS with atomic swap, pm2 restart, backup rotation, and rollback on failure
       - name: Build & Activate on VPS (atomic, with rollback & backup rotation)
         env:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           TIMESTAMP: ${{ env.TIMESTAMP }}  # ✅ Reuse same timestamp
         run: |
+          set -euo pipefail  # Exit on any error
+          
           echo "🔁 Building & activating new version on VPS..."
+          echo "🔍 Validating deployment environment..."
 
-          ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
+          # Validate required environment variables
+          if [ -z "${VPS_USER}" ] || [ -z "${VPS_HOST}" ] || [ -z "${TIMESTAMP}" ]; then
+            echo "❌ ERROR: Missing required environment variables!"
+            exit 1
+          fi
+
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${VPS_USER}@${VPS_HOST} \
             "bash -s -- ${TIMESTAMP}" <<'EOF'
             set -euo pipefail
 
@@ -120,9 +148,13 @@ jobs:
             BACKUP_DIR="/home/${VPS_USER}/backups/www.gaza.family"
 
             echo "📂 Preparing to activate build at ${TMPDIR}"
+            echo "🔍 Validating deployment environment on VPS..."
 
             # Ensure backup dir exists
-            mkdir -p "${BACKUP_DIR}"
+            if ! mkdir -p "${BACKUP_DIR}"; then
+              echo "❌ ERROR: Failed to create backup directory ${BACKUP_DIR}"
+              exit 1
+            fi
 
             # Clean up old temporary deploy directories (older than 1 day)
             echo "🧹 Cleaning old temporary deploy directories..."
@@ -130,6 +162,16 @@ jobs:
 
             if [ ! -d "${TMPDIR}" ]; then
               echo "❌ ERROR: Temp directory not found (${TMPDIR})"
+              echo "🔍 Available directories in /home/${VPS_USER}/htdocs/:"
+              ls -la /home/${VPS_USER}/htdocs/ || echo "Directory listing failed"
+              exit 1
+            fi
+
+            # Check if temp directory has expected files
+            if [ ! -f "${TMPDIR}/package.json" ]; then
+              echo "❌ ERROR: package.json not found in temp directory!"
+              echo "🔍 Contents of temp directory:"
+              ls -la "${TMPDIR}" || echo "Directory listing failed"
               exit 1
             fi
 
@@ -147,27 +189,47 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
+            # Check Node.js version
+            echo "🔍 Node.js version: $(node --version)"
+            echo "🔍 npm version: $(npm --version)"
 
             # 🧠 Smart install: skip if no deps changed
             if [ -f "$LIVEDIR/package-lock.json" ] && cmp -s package-lock.json "$LIVEDIR/package-lock.json"; then
               echo "✅ No dependency changes — skipping npm ci"
             else
               echo "📦 Installing dependencies..."
-              npm ci --legacy-peer-deps
+              if ! npm ci --legacy-peer-deps; then
+                echo "❌ ERROR: npm install failed!"
+                echo "🔍 Checking npm cache and retrying..."
+                npm cache clean --force
+                if ! npm ci --legacy-peer-deps; then
+                  echo "❌ ERROR: npm install failed after cache clean!"
+                  exit 1
+                fi
+              fi
             fi
 
             echo "⚙️ Generating Prisma client..."
             # npx prisma generate || echo "⚠️ Prisma generate failed (ignored)" # We'll comment this command out since it'll be run during build command next
 
             echo "🏗️ Building Next.js app..."
-            npm run build
-
+            if ! npm run build; then
+              echo "❌ ERROR: Build failed!"
+              echo "🔍 Build logs:"
+              echo "Checking if there are any build artifacts..."
+              ls -la .next/ 2>/dev/null || echo "No .next directory found"
+              exit 1
+            fi
 
             # sanity check: ensure build files exist
             if [ ! -d ".next" ]; then
               echo "❌ Build artifact .next missing in tmpdir. Aborting."
+              echo "🔍 Contents of build directory:"
+              ls -la "${TMPDIR}" || echo "Directory listing failed"
               exit 1
             fi
+
+            echo "✅ Build completed successfully"
 
             # Backup current live version
             if [ -d "${LIVEDIR}" ]; then
@@ -190,22 +252,62 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
+            # Check if PM2 is installed and working
+            if ! command -v pm2 >/dev/null 2>&1; then
+              echo "❌ ERROR: PM2 is not installed or not in PATH!"
+              exit 1
+            fi
+
+            echo "🔍 Current PM2 processes:"
+            pm2 list || echo "PM2 list command failed"
+
             if pm2 reload gaza-family --update-env; then
               echo "✅ PM2 reloaded successfully."
+              sleep 5  # Give it time to start
+              
+              # Verify the process is actually running
+              if pm2 list | grep -q "gaza-family.*online"; then
+                echo "✅ PM2 process is confirmed online"
+              else
+                echo "⚠️ PM2 process is not online after reload, checking logs..."
+                pm2 logs gaza-family --lines 20 || echo "Could not get PM2 logs"
+                exit 1
+              fi
             else
               echo "⚠️ PM2 reload failed, attempting fresh start..."
-              # try start, otherwise rollback
-              pm2 start npm --name "gaza-family" -- run start || true
-
-              if ! pm2 list | grep -q "gaza-family.*online"; then
-                echo "🔁 PM2 failed to start: rolling back to previous backup..."
+              
+              # Stop existing process first
+              pm2 stop gaza-family || echo "No existing process to stop"
+              pm2 delete gaza-family || echo "No existing process to delete"
+              
+              # Try to start fresh
+              if pm2 start npm --name "gaza-family" -- run start; then
+                echo "✅ PM2 started successfully"
+                sleep 5
+                
+                if pm2 list | grep -q "gaza-family.*online"; then
+                  echo "✅ PM2 process is confirmed online"
+                else
+                  echo "❌ PM2 process failed to start properly"
+                  pm2 logs gaza-family --lines 20 || echo "Could not get PM2 logs"
+                  exit 1
+                fi
+              else
+                echo "❌ PM2 failed to start: rolling back to previous backup..."
                 LATEST_BACKUP=$(ls -dt ${BACKUP_DIR}/backup_* 2>/dev/null | head -n 1 || true)
                 if [ -n "$LATEST_BACKUP" ] && [ -d "$LATEST_BACKUP" ]; then
+                  echo "🔄 Rolling back to backup: ${LATEST_BACKUP}"
                   rm -rf "${LIVEDIR}"
                   cp -r "$LATEST_BACKUP" "${LIVEDIR}"
-                  pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start
+                  
+                  if pm2 reload gaza-family --update-env || pm2 start npm --name "gaza-family" -- run start; then
+                    echo "✅ Rollback successful"
+                  else
+                    echo "❌ Rollback failed - manual intervention required!"
+                    exit 1
+                  fi
                 else
-                  echo "⚠️ No backup found — manual fix needed!"
+                  echo "❌ No backup found — manual fix needed!"
                   exit 1
                 fi
               fi
@@ -218,3 +320,58 @@ jobs:
 
             echo "✅ Deployment completed successfully."
           EOF
+
+      # 🔍 Health check after deployment
+      - name: Health Check
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          echo "🏥 Performing health check..."
+          
+          # Wait a moment for PM2 to fully start
+          sleep 10
+          
+          # Check if PM2 process is running
+          if ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "pm2 list | grep -q 'gaza-family.*online'"; then
+            echo "✅ PM2 process is running"
+          else
+            echo "❌ PM2 process is not running - deployment may have failed"
+            exit 1
+          fi
+          
+          # Try to make a request to the app (if URL is available)
+          # Note: Add your app URL to secrets if you want to test HTTP response
+          # if [ -n "${APP_URL:-}" ]; then
+          #   if curl -f -s "${APP_URL}" > /dev/null; then
+          #     echo "✅ App is responding to HTTP requests"
+          #   else
+          #     echo "⚠️ App is not responding to HTTP requests"
+          #   fi
+          # fi
+          
+          echo "✅ Health check completed successfully"
+
+      # 📢 Deployment notification (optional)
+      - name: Deployment Notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "🎉 Deployment completed successfully!"
+            # Add webhook notification here if desired
+            # SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
+            # if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
+            #   curl -X POST -H "Content-Type: application/json" \
+            #     -d '{"text":"✅ GazaAidSync deployed successfully"}' \
+            #     "${SLACK_WEBHOOK_URL}" || true
+            # fi
+          else
+            echo "❌ Deployment failed!"
+            # Add failure notification here if desired
+            # SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
+            # if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
+            #   curl -X POST -H "Content-Type: application/json" \
+            #     -d '{"text":"❌ GazaAidSync deployment failed"}' \
+            #     "${SLACK_WEBHOOK_URL}" || true
+            # fi
+          fi
