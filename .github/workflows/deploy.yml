@@ -175,10 +175,38 @@ jobs:
               exit 1
             fi
 
-            # Preserve existing .env
+            # Preserve existing .env and node_modules
             if [ -f "${LIVEDIR}/.env" ]; then
               echo "🔐 Preserving existing .env"
               cp "${LIVEDIR}/.env" "${TMPDIR}/.env"
+            fi
+
+            # 🧠 Smart node_modules preservation: copy from live dir if no deps changed
+            if [ -f "$LIVEDIR/package-lock.json" ] && cmp -s package-lock.json "$LIVEDIR/package-lock.json"; then
+              echo "✅ No dependency changes detected"
+              if [ -d "$LIVEDIR/node_modules" ]; then
+                echo "📦 Preserving existing node_modules from live directory..."
+                # Used rsync for more efficient copying with progress
+                if rsync -a --info=progress2 "$LIVEDIR/node_modules/" "${TMPDIR}/node_modules/"; then
+                  # This wil copy the *contents* of node_modules, not the folder itself, into the temporary directory.
+                  # If the destination folder (${TMPDIR}/node_modules/) doesn't exist yet,
+                  # rsync will create it first, preventing all the contents from being copied directly
+                  # into the ${TMPDIR} root, which is an unwanted behavior.
+                  # Otherwise, we have to copy the entire node_modules folder itself 
+                  # without a trailing slash to ensure that we don't end up copying 
+                  # all the heavy content of the node_modules folder inside the TMPDIR root, which we don't want
+                  echo "✅ node_modules preserved successfully"
+                else
+                  echo "⚠️ Failed to preserve node_modules, will install fresh"
+                  rm -rf "${TMPDIR}/node_modules" 2>/dev/null || true
+                fi
+              else
+                echo "⚠️ No existing node_modules found in live directory"
+              fi
+            else
+              echo "📦 Dependency changes detected, will install fresh node_modules"
+              # Clean any existing node_modules in tmpdir
+              rm -rf "${TMPDIR}/node_modules" 2>/dev/null || true
             fi
 
             # install production dependencies inside tmpdir
@@ -193,9 +221,26 @@ jobs:
             echo "🔍 Node.js version: $(node --version)"
             echo "🔍 npm version: $(npm --version)"
 
-            # 🧠 Smart install: skip if no deps changed
-            if [ -f "$LIVEDIR/package-lock.json" ] && cmp -s package-lock.json "$LIVEDIR/package-lock.json"; then
-              echo "✅ No dependency changes — skipping npm ci"
+            # 🧠 Smart install: skip if node_modules exists and is valid
+            if [ -d "node_modules" ]; then
+              echo "✅ node_modules exists, validating installation..."
+              
+              # Quick validation: check if key packages exist
+              if [ -d "node_modules/.prisma" ] && [ -d "node_modules/next" ] && [ -d "node_modules/react" ]; then
+                echo "✅ node_modules appears valid, skipping npm ci"
+              else
+                echo "⚠️ node_modules appears incomplete, installing dependencies..."
+                rm -rf node_modules
+                if ! npm ci --legacy-peer-deps; then
+                  echo "❌ ERROR: npm install failed!"
+                  echo "🔍 Checking npm cache and retrying..."
+                  npm cache clean --force
+                  if ! npm ci --legacy-peer-deps; then
+                    echo "❌ ERROR: npm install failed after cache clean!"
+                    exit 1
+                  fi
+                fi
+              fi
             else
               echo "📦 Installing dependencies..."
               if ! npm ci --legacy-peer-deps; then
