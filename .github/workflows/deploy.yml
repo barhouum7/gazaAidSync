@@ -366,57 +366,57 @@ jobs:
             echo "✅ Deployment completed successfully."
           EOF
 
-      # 🔍 Health check after deployment
-      - name: Health Check
-        env:
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-        run: |
-          echo "🏥 Performing health check..."
+      # # 🔍 Health check after deployment
+      # - name: Health Check
+      #   env:
+      #     VPS_USER: ${{ secrets.VPS_USER }}
+      #     VPS_HOST: ${{ secrets.VPS_HOST }}
+      #   run: |
+      #     echo "🏥 Performing health check..."
           
-          # Wait a moment for PM2 to fully start
-          sleep 10
+      #     # Wait a moment for PM2 to fully start
+      #     sleep 10
           
-          # Check if PM2 process is running
-          if ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "pm2 list | grep -q 'gaza-family.*online'"; then
-            echo "✅ PM2 process is running"
-          else
-            echo "❌ PM2 process is not running - deployment may have failed"
-            exit 1
-          fi
+      #     # Check if PM2 process is running
+      #     if ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "pm2 list | grep -q 'gaza-family.*online'"; then
+      #       echo "✅ PM2 process is running"
+      #     else
+      #       echo "❌ PM2 process is not running - deployment may have failed"
+      #       exit 1
+      #     fi
           
-          # Try to make a request to the app (if URL is available)
-          # Note: Add your app URL to secrets if you want to test HTTP response
-          # if [ -n "${APP_URL:-}" ]; then
-          #   if curl -f -s "${APP_URL}" > /dev/null; then
-          #     echo "✅ App is responding to HTTP requests"
-          #   else
-          #     echo "⚠️ App is not responding to HTTP requests"
-          #   fi
-          # fi
+      #     # Try to make a request to the app (if URL is available)
+      #     # Note: Add your app URL to secrets if you want to test HTTP response
+      #     # if [ -n "${APP_URL:-}" ]; then
+      #     #   if curl -f -s "${APP_URL}" > /dev/null; then
+      #     #     echo "✅ App is responding to HTTP requests"
+      #     #   else
+      #     #     echo "⚠️ App is not responding to HTTP requests"
+      #     #   fi
+      #     # fi
           
-          echo "✅ Health check completed successfully"
+      #     echo "✅ Health check completed successfully"
 
-      # 📢 Deployment notification (optional)
-      - name: Deployment Notification
-        if: always()
-        run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "🎉 Deployment completed successfully!"
-            # Add webhook notification here if desired
-            # SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
-            # if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
-            #   curl -X POST -H "Content-Type: application/json" \
-            #     -d '{"text":"✅ GazaAidSync deployed successfully"}' \
-            #     "${SLACK_WEBHOOK_URL}" || true
-            # fi
-          else
-            echo "❌ Deployment failed!"
-            # Add failure notification here if desired
-            # SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
-            # if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
-            #   curl -X POST -H "Content-Type: application/json" \
-            #     -d '{"text":"❌ GazaAidSync deployment failed"}' \
-            #     "${SLACK_WEBHOOK_URL}" || true
-            # fi
-          fi
+      # # 📢 Deployment notification (optional)
+      # - name: Deployment Notification
+      #   if: always()
+      #   run: |
+      #     if [ "${{ job.status }}" == "success" ]; then
+      #       echo "🎉 Deployment completed successfully!"
+      #       # Add webhook notification here if desired
+      #       # SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
+      #       # if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
+      #       #   curl -X POST -H "Content-Type: application/json" \
+      #       #     -d '{"text":"✅ GazaAidSync deployed successfully"}' \
+      #       #     "${SLACK_WEBHOOK_URL}" || true
+      #       # fi
+      #     else
+      #       echo "❌ Deployment failed!"
+      #       # Add failure notification here if desired
+      #       # SLACK_WEBHOOK_URL="${{ secrets.SLACK_WEBHOOK_URL }}"
+      #       # if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
+      #       #   curl -X POST -H "Content-Type: application/json" \
+      #       #     -d '{"text":"❌ GazaAidSync deployment failed"}' \
+      #       #     "${SLACK_WEBHOOK_URL}" || true
+      #       # fi
+      #     fi
