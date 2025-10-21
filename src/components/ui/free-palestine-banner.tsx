@@ -35,49 +35,49 @@ export default function FreePalestineBanner() {
             ${isDarkMode ? "bg-gray-800/70 text-gray-100" : "bg-gray-50/70 text-gray-900"} 
             px-4 py-3 md:px-6`}
         >
-        {/* Background Blurs */}
-        <div
-            className="absolute left-[max(-7rem,calc(50%-52rem))] top-1/2 -z-10 -translate-y-1/2 blur-2xl"
-            aria-hidden="true"
-        >
-            <BlurDiv />
-        </div>
-        <div
-            className="absolute left-[max(45rem,calc(50%+8rem))] top-1/2 -z-10 -translate-y-1/2 blur-2xl"
-            aria-hidden="true"
-        >
-            <BlurDiv />
-        </div>
-
-        {/* Banner Text */}
-        <p className="mx-auto text-sm sm:leading-6 text-center max-w-md sm:max-w-6xl">
-            <Link
-            href={linkTo}
-            target="_blank"
-            className="hover:underline hover:text-red-600 transition-colors"
-            >
-            <strong className="font-semibold text-green-700 dark:text-green-400">
-                {title}
-            </strong>
-            <svg
-                viewBox="0 0 2 2"
-                className="mx-2 inline h-0.5 w-0.5 fill-current"
+            {/* Background Blurs */}
+            <div
+                className="absolute left-[max(-7rem,calc(50%-52rem))] top-1/2 -z-10 -translate-y-1/2 blur-2xl"
                 aria-hidden="true"
             >
-                <circle cx={1} cy={1} r={1} />
-            </svg>
-            {description}
-            </Link>
-        </p>
+                <BlurDiv />
+            </div>
+            <div
+                className="absolute left-[max(45rem,calc(50%+8rem))] top-1/2 -z-10 -translate-y-1/2 blur-2xl"
+                aria-hidden="true"
+            >
+                <BlurDiv />
+            </div>
 
-        {/* Close Button */}
-        <button
-            onClick={handleClose}
-            className="cursor-pointer absolute right-3 top-2 p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-            aria-label="Close banner"
-        >
-            <X className="h-4 w-4" />
-        </button>
+            {/* Banner Text */}
+            <p className="mx-auto text-sm sm:text-[13.3px] sm:leading-6 text-center max-w-md sm:max-w-6xl">
+                <Link
+                    href={linkTo}
+                    target="_blank"
+                    className="hover:underline hover:text-red-600 transition-colors"
+                >
+                    <strong className="font-semibold text-green-700 dark:text-green-400">
+                        {title}
+                    </strong>
+                    <svg
+                        viewBox="0 0 2 2"
+                        className="mx-2 inline h-0.5 w-0.5 fill-current"
+                        aria-hidden="true"
+                    >
+                        <circle cx={1} cy={1} r={1} />
+                    </svg>
+                    {description}
+                </Link>
+            </p>
+
+            {/* Close Button */}
+            <button
+                onClick={handleClose}
+                className="cursor-pointer absolute right-3 top-2 p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                aria-label="Close banner"
+            >
+                <X className="h-4 w-4" />
+            </button>
         </div>
     );
 }
