@@ -181,25 +181,70 @@ jobs:
               cp "${LIVEDIR}/.env" "${TMPDIR}/.env"
             fi
 
+            # Define a spinner function to run in the background while rsync copies files
+            show_spinner() {
+              local -r pid="${1}"
+              local -r delay="0.1"
+              local spinstr='|/-\\'
+              local i=0
+
+              # Print an initial message and a space for the spinner
+              printf "📦 Copying node_modules (this may take a moment)... "
+
+              # Loop while the process is running
+              while kill -0 "$pid" 2>/dev/null; do
+                i=$(( (i+1) %4 ))
+                printf "\r📦 Copying node_modules (this may take a moment)... ${spinstr:$i:1}"
+                sleep "$delay"
+              done
+              
+              # Clear the spinner line by overwriting it with spaces and a newline
+              printf "\r%s\n" "                                                                      "
+            }
+
             # 🧠 Smart node_modules preservation: copy from live dir if no deps changed
             if [ -f "$LIVEDIR/package-lock.json" ] && cmp -s "${TMPDIR}/package-lock.json" "$LIVEDIR/package-lock.json"; then
               echo "✅ No dependency changes detected"
               if [ -d "$LIVEDIR/node_modules" ]; then
                 echo "📦 Preserving existing node_modules from live directory..."
-                # Used rsync for more efficient copying with progress
-                if rsync -a --info=progress2,stats1 --no-inc-recursive --human-readable "$LIVEDIR/node_modules/" "${TMPDIR}/node_modules/"; then
-                  # This wil copy the *contents* of node_modules, not the folder itself, into the temporary directory.
-                  # If the destination folder (${TMPDIR}/node_modules/) doesn't exist yet,
-                  # rsync will create it first, preventing all the contents from being copied directly
-                  # into the ${TMPDIR} root, which is an unwanted behavior.
-                  # Otherwise, we have to copy the entire node_modules folder itself 
-                  # without a trailing slash to ensure that we don't end up copying 
-                  # all the heavy content of the node_modules folder inside the TMPDIR root, which we don't want
-                  echo "✅ node_modules preserved successfully"
+                
+                # Use a temporary file to capture rsync output
+                rsync_log=$(mktemp)
+
+                # Start rsync with --stats and other flags in the background, redirecting output to the log file
+                # The --info=stats2 flag provides a more detailed summary
+                rsync -a --no-inc-recursive --human-readable --stats --info=stats2 "$LIVEDIR/node_modules/" "${TMPDIR}/node_modules/" > "$rsync_log" 2>&1 &
+                rsync_pid=$!
+                
+                # Start the spinner function in the background
+                show_spinner "$rsync_pid" &
+                spinner_pid=$!
+                
+                # Wait for the rsync process to finish
+                wait "$rsync_pid"
+                rsync_exit_code=$?
+                
+                # Kill the spinner process now that rsync is done
+                kill "$spinner_pid" 2>/dev/null || true
+                
+                # Check the rsync exit code
+                if [ $rsync_exit_code -eq 0 ]; then
+                  printf "\n\n✅ node_modules preserved successfully\n"
+                  
+                  # Print the final rsync summary
+                  echo
+                  echo "--- Rsync Summary ---"
+                  tail -3 "$rsync_log"
+                  echo "---------------------"
                 else
-                  echo "⚠️ Failed to preserve node_modules, will install fresh"
+                  echo "⚠️ Failed to preserve node_modules, rsync exited with status $rsync_exit_code."
+                  echo "⚠️ Will install fresh."
                   rm -rf "${TMPDIR}/node_modules" 2>/dev/null || true
                 fi
+
+                # Clean up the temporary log file
+                rm "$rsync_log"
+
               else
                 echo "⚠️ No existing node_modules found in live directory"
               fi
