@@ -187,7 +187,7 @@ jobs:
               if [ -d "$LIVEDIR/node_modules" ]; then
                 echo "📦 Preserving existing node_modules from live directory..."
                 # Used rsync for more efficient copying with progress
-                if rsync -a --info=progress2 "$LIVEDIR/node_modules/" "${TMPDIR}/node_modules/"; then
+                if rsync -a --info=progress2,stats1 --no-inc-recursive --human-readable "$LIVEDIR/node_modules/" "${TMPDIR}/node_modules/"; then
                   # This wil copy the *contents* of node_modules, not the folder itself, into the temporary directory.
                   # If the destination folder (${TMPDIR}/node_modules/) doesn't exist yet,
                   # rsync will create it first, preventing all the contents from being copied directly
