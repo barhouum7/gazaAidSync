@@ -182,7 +182,7 @@ jobs:
             fi
 
             # 🧠 Smart node_modules preservation: copy from live dir if no deps changed
-            if [ -f "$LIVEDIR/package-lock.json" ] && cmp -s package-lock.json "$LIVEDIR/package-lock.json"; then
+            if [ -f "$LIVEDIR/package-lock.json" ] && cmp -s "${TMPDIR}/package-lock.json" "$LIVEDIR/package-lock.json"; then
               echo "✅ No dependency changes detected"
               if [ -d "$LIVEDIR/node_modules" ]; then
                 echo "📦 Preserving existing node_modules from live directory..."
