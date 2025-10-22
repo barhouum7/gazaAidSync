@@ -41,16 +41,6 @@ interface DonationModalProps {
     onClose: () => void;
 }
 
-type DonationMethodType = {
-    name: string;
-    description: string;
-    address?: string;
-    shortAddress?: string;
-    tag?: string;
-    details?: string;
-    link?: string;
-};
-
 export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
     const [copiedMethod, setCopiedMethod] = useState<string | null>(null);
     const [showCryptoAddresses, setShowCryptoAddresses] = useState(false);
@@ -155,103 +145,129 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
 
     const donationMethods = [
         {
-        id: "crypto",
-        title: "Cryptocurrency",
-        description: "Fast, secure, and direct donations",
-        icon: <Globe className="h-6 w-6" />,
-        color: "bg-gradient-to-r from-orange-500 to-yellow-500",
-        methods: [
-            {
-            name: "NOWPayments",
-            description: "Multi-cryptocurrency donations",
-            link: "https://nowpayments.io/donation/fund_palestine_gaza"
-            },
-            {
-            name: "Bitcoin",
-            description: "Most popular cryptocurrency",
-            address: "19uGdEp55arbSZWeHeJTef8yRNbXVS521M",
-            shortAddress: "19uGd...XVS521M"
-            },
-            {
-            name: "Ethereum",
-            description: "Smart contract platform",
-            address: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-            shortAddress: "0x742d...4d8b6"
-            },
-            {
-            name: "USDT (TRC20)",
-            description: "Stablecoin on Tron network",
-            address: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
-            shortAddress: "TQn9...cbLSE"
-            }
-        ]
+            id: "crypto",
+            title: "Cryptocurrency",
+            description: "Fast, secure, and direct donations",
+            icon: <Globe className="h-6 w-6" />,
+            color: "bg-gradient-to-r from-orange-500 to-yellow-500",
+            methods: [
+                {
+                    name: "NOWPayments",
+                    description: "Multi-cryptocurrency donations",
+                    link: "https://nowpayments.io/donation/fund_palestine_gaza"
+                },
+                {
+                    name: "Bitcoin",
+                    description: "Most popular cryptocurrency",
+                    address: "19uGdEp55arbSZWeHeJTef8yRNbXVS521M",
+                    shortAddress: "19uGd...XVS521M"
+                },
+                {
+                    name: "Ethereum",
+                    description: "Smart contract platform",
+                    address: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+                    shortAddress: "0x742d...4d8b6"
+                },
+                {
+                    name: "USDT (TRC20)",
+                    description: "Stablecoin on Tron network",
+                    address: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+                    shortAddress: "TQn9...cbLSE"
+                }
+            ]
         },
         {
-        id: "traditional",
-        title: "Traditional Banking",
-        description: "Bank transfers and wire payments",
-        icon: <CreditCard className="h-6 w-6" />,
-        color: "bg-gradient-to-r from-blue-500 to-indigo-500",
-        methods: [
-            {
-            name: "PayPal",
-            link: "https://www.paypal.com/donate/?hosted_button_id=BUTTON_ID",
-            description: "Quick and secure online payments"
-            },
-            {
-            name: "Bank Transfer",
-            details: "IBAN: GB29 NWBK 6016 1331 9268 19",
-            description: "Direct bank transfer to Gaza relief fund"
-            }
-        ]
+            id: "mobile",
+            title: "Mobile Payments",
+            description: "Quick donations via mobile apps",
+            icon: <Smartphone className="h-6 w-6" />,
+            color: "bg-gradient-to-r from-green-500 to-emerald-500",
+            methods: [
+                // For now we accept on Binance app and Redotpay app
+                // Redotpay is more popular in MENA region
+                // 1. Scan QR code with Binance app to donate
+                {
+                    name: "Binance App QR Code",
+                    href: "https://s.binance.com/kLzgXaAA",
+                    image: "/assets/images/donate-binance-qr.jpg",
+                    hasLink: false,
+                    alt: "Binance App QR Code for Donations",
+                    width: 312,
+                    height: 496,
+                    description: "Scan this QR code with Binance app to donate"
+                },
+                // // 2. Binance Pay Request link
+                // {
+                //     name: "Binance Pay Request",
+                //     link: "https://s.binance.com/kLzgXaAA",
+                //     description: "Donate using Binance Pay Request link"
+                // },
+                // 3. Binance ID: 67318838
+                {
+                    name: "Binance ID",
+                    details: "67318838",
+                    description: "Donate using Binance ID in Binance Pay"
+                },
+                // 4. Redotpay ID: 1756245868
+                {
+                    name: "Redotpay ID",
+                    details: "1756245868",
+                    description: "Donate using Redotpay ID in Redotpay app"
+                }
+            ]
         },
         {
-        id: "mobile",
-        title: "Mobile Payments",
-        description: "Quick donations via mobile apps",
-        icon: <Smartphone className="h-6 w-6" />,
-        color: "bg-gradient-to-r from-green-500 to-emerald-500",
-        methods: [
-            {
-            name: "Cash App",
-            tag: "$GazaRelief",
-            description: "Send donations via Cash App"
-            },
-            {
-            name: "Venmo",
-            tag: "@Gaza-Aid-Sync",
-            description: "Quick mobile payments"
-            }
-        ]
+            id: "traditional",
+            title: "Traditional Banking",
+            description: "Bank transfers and wire payments",
+            icon: <CreditCard className="h-6 w-6" />,
+            color: "bg-gradient-to-r from-blue-500 to-indigo-500",
+            methods: [
+                {
+                    name: "PayPal",
+                    details: "contactibo@duck.com",
+                    description: "Quick and secure online payments"
+                },
+                {
+                    name: "Bank Transfer",
+                    details: "IBAN: TN59 24 031 085 2452 511101 96",
+                    description: "Direct bank transfer to Gaza relief fund"
+                }
+            ]
         },
         {
-        id: "organizations",
-        title: "Trusted Organizations",
-        description: "Established humanitarian organizations",
-        icon: <Shield className="h-6 w-6" />,
-        color: "bg-gradient-to-r from-purple-500 to-pink-500",
-        methods: [
-            {
-                name: "UNRWA",
-                link: "https://donate.unrwa.org/int/en/gaza",
-                description: "UN Relief and Works Agency for Palestine"
-            },
-            {
-                name: "WFP",
-                link: "https://www.wfp.org/emergencies/palestine-emergency",
-                description: "World Food Programme Gaza Emergency"
-            },
-            {
-                name: "Red Crescent",
-                link: "https://www.palestinercs.org/en/DonationNow",
-                description: "Palestinian Red Crescent Society"
-            },
-            {
-                name: "NOWPayments",
-                link: "https://nowpayments.io/donation/fund_palestine_gaza",
-                description: "Crypto donations with multiple currencies"
-            }
-        ]
+            id: "organizations",
+            title: "Trusted Organizations",
+            description: "Established humanitarian organizations",
+            icon: <Shield className="h-6 w-6" />,
+            color: "bg-gradient-to-r from-purple-500 to-pink-500",
+            methods: [
+                {
+                    name: "UNRWA",
+                    link: "https://donate.unrwa.org/int/en/gaza",
+                    description: "UN Relief and Works Agency for Palestine"
+                },
+                {
+                    name: "WFP",
+                    link: "https://www.wfp.org/emergencies/palestine-emergency",
+                    description: "World Food Programme Gaza Emergency"
+                },
+                {
+                    name: "Red Crescent",
+                    link: "https://www.palestinercs.org/en/DonationNow",
+                    description: "Palestinian Red Crescent Society"
+                },
+                {
+                    name: "NOWPayments",
+                    href: "https://nowpayments.io/donation/fund_palestine_gaza",
+                    image: "https://nowpayments.io/images/embeds/donation-button-black.svg",
+                    hasLink: true,
+                    alt: "Crypto donation button by NOWPayments",
+                    width: 192,
+                    height: 48,
+                    description: "Crypto donations with multiple currencies"
+                }
+            ]
         }
     ];
 
@@ -292,7 +308,7 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                                             <TabsTrigger value="nowpayments" className="data-[state=active]:bg-gradient-to-r from-orange-500 to-yellow-500 data-[state=active]:text-white">
                                                 NOWPayments
                                             </TabsTrigger>
-                                            <TabsTrigger value="direct" className="data-[state=active]:bg-gradient-to-r from-orange-500 to-yellow-500 data-[state=active]:text-white">
+                                            <TabsTrigger value="direct" className="text-xs data-[state=active]:bg-gradient-to-r from-orange-500 to-yellow-500 data-[state=active]:text-white">
                                                 {`Direct Addresses (Advanced)`}
                                             </TabsTrigger>
                                         </TabsList>
@@ -304,11 +320,13 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                                                         Multi-cryptocurrency donations
                                                     </Badge>
                                                 </div>
-                                                <iframe
-                                                    className="w-full h-[300px] border-0 rounded"
-                                                    src="https://nowpayments.io/embeds/donation-widget?api_key=859f48ee-0cf3-4cf5-8840-c13c0d75df77"
-                                                    allowFullScreen
-                                                />
+                                                <div className="w-full h-full">
+                                                    <iframe
+                                                        className="w-full mx-auto pl-8 h-[calc(100vh+8rem)] border-0 rounded"
+                                                        src="https://nowpayments.io/embeds/donation-widget?api_key=859f48ee-0cf3-4cf5-8840-c13c0d75df77"
+                                                        allowFullScreen
+                                                    />
+                                                </div>
                                             </div>
                                         </TabsContent>
                                         <TabsContent value="direct" className="mt-4">
@@ -449,96 +467,137 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                                     
                                         {'address' in method && method.address && (
                                             <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <code className="text-xs bg-muted px-2 py-1 rounded flex-1 font-mono">
-                                                {'shortAddress' in method ? method.shortAddress : ''}
-                                                </code>
-                                                <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => copyToClipboard(('address' in method ? method.address : '')!, `${category.id}-${index}`)}
-                                                className="h-8 w-8 p-0"
-                                                >
-                                                {copiedMethod === `${category.id}-${index}` ? (
-                                                    <Check className="h-3 w-3 text-green-500" />
-                                                ) : (
-                                                    <Copy className="h-3 w-3" />
-                                                )}
-                                                </Button>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">
-                                                Click copy to get full address
-                                            </p>
+                                                <div className="flex items-center gap-2">
+                                                    <code className="text-xs bg-muted px-2 py-1 rounded flex-1 font-mono">
+                                                        {'shortAddress' in method ? method.shortAddress : ''}
+                                                    </code>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => copyToClipboard(('address' in method ? method.address : '')!, `${category.id}-${index}`)}
+                                                        className="h-8 w-8 p-0"
+                                                    >
+                                                        {copiedMethod === `${category.id}-${index}` ? (
+                                                            <Check className="h-3 w-3 text-green-500" />
+                                                        ) : (
+                                                            <Copy className="h-3 w-3" />
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Click copy to get full address
+                                                </p>
                                             </div>
                                         )}
 
-                                        {'tag' in method && method.tag && (
+                                        {/* {'tag' in method && method.tag && (
                                             <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                                                {'tag' in method ? method.tag : ''}
-                                                </code>
-                                                <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => copyToClipboard(('tag' in method ? method.tag : '')!, `${category.id}-${index}`)}
-                                                className="h-8 w-8 p-0"
-                                                >
-                                                {copiedMethod === `${category.id}-${index}` ? (
-                                                    <Check className="h-3 w-3 text-green-500" />
-                                                ) : (
-                                                    <Copy className="h-3 w-3" />
-                                                )}
-                                                </Button>
+                                                <div className="flex items-center gap-2">
+                                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+                                                        {'tag' in method ? method.tag : ''}
+                                                    </code>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => copyToClipboard(('tag' in method ? method.tag : '')!, `${category.id}-${index}`)}
+                                                        className="h-8 w-8 p-0"
+                                                    >
+                                                        {copiedMethod === `${category.id}-${index}` ? (
+                                                            <Check className="h-3 w-3 text-green-500" />
+                                                        ) : (
+                                                            <Copy className="h-3 w-3" />
+                                                        )}
+                                                    </Button>
+                                                </div>
                                             </div>
+                                        )} */}
+                                        
+                                        {/* {'id' in method && method.id && (
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+                                                        {'id' in method ? method.id : ''}
+                                                    </code>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => copyToClipboard(('id' in method ? method.id : '')!, `${category.id}-${index}`)}
+                                                        className="h-8 w-8 p-0"
+                                                    >
+                                                        {copiedMethod === `${category.id}-${index}` ? (
+                                                            <Check className="h-3 w-3 text-green-500" />
+                                                        ) : (
+                                                            <Copy className="h-3 w-3" />
+                                                        )}
+                                                    </Button>
+                                                </div>
                                             </div>
-                                        )}
+                                        )} */}
 
                                         {'details' in method && method.details && (
                                             <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <code className="text-xs bg-muted px-2 py-1 rounded flex-1 font-mono">
-                                                {'details' in method ? method.details : ''}
-                                                </code>
-                                                <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => copyToClipboard(('details' in method ? method.details : '')!, `${category.id}-${index}`)}
-                                                className="h-8 w-8 p-0"
-                                                >
-                                                {copiedMethod === `${category.id}-${index}` ? (
-                                                    <Check className="h-3 w-3 text-green-500" />
-                                                ) : (
-                                                    <Copy className="h-3 w-3" />
-                                                )}
-                                                </Button>
-                                            </div>
+                                                <div className="flex items-center gap-2">
+                                                    <code className="text-xs bg-muted px-2 py-1 rounded flex-1 font-mono">
+                                                        {'details' in method ? method.details : ''}
+                                                    </code>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => copyToClipboard(('details' in method ? method.details : '')!, `${category.id}-${index}`)}
+                                                        className="h-8 w-8 p-0"
+                                                    >
+                                                        {copiedMethod === `${category.id}-${index}` ? (
+                                                            <Check className="h-3 w-3 text-green-500" />
+                                                        ) : (
+                                                            <Copy className="h-3 w-3" />
+                                                        )}
+                                                    </Button>
+                                                </div>
                                             </div>
                                         )}
 
                                         {'link' in method && method.link && (
                                             <div className="flex flex-col items-center justify-center space-y-2">
-                                                {
-                                                    method.name !== 'NOWPayments' ? (
-                                                        <Button asChild className="w-full" size="sm">
-                                                            <Link href={'link' in method ? method.link : '#'} target="_blank" rel="noopener noreferrer">
-                                                                <ExternalLink className="h-3 w-3 mr-2" />
-                                                                Donate Now
-                                                            </Link>
-                                                        </Button>
-                                                    ) : (
-                                                        <Link href={'link' in method ? method.link : '#'} target="_blank" rel="noopener noreferrer"
-                                                            className="inline-block relative flex-none w-48 h-12"
-                                                        >
-                                                            <BlurImage
-                                                                src="https://nowpayments.io/images/embeds/donation-button-black.svg" 
-                                                                alt="Crypto donation button by NOWPayments"
-                                                                fill
-                                                            />
-                                                        </Link>
-                                                    )
-                                                }
-                                                
+                                                <Button asChild className="w-full" size="sm">
+                                                    <Link href={'link' in method ? method.link : '#'} target="_blank" rel="noopener noreferrer">
+                                                        <ExternalLink className="h-3 w-3 mr-2" />
+                                                        Donate Now
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        )}
+                                        
+                                        {'image' in method && method.image && (
+                                            <div className="flex flex-col items-center justify-center space-y-2">
+                                                {method.hasLink ? (
+                                                    <Link href={'image' in method ? method.href : '#'} target="_blank" rel="noopener noreferrer"
+                                                        className={cn(
+                                                            "inline-block relative flex-none",
+                                                            // `w-[${method.width}px] h-[${method.height}px]` // in px w-48 h-12 = 192px x 48px
+                                                        )}
+                                                        style={{ width: method.width ? `${method.width}px` : 'auto', height: method.height ? `${method.height}px` : 'auto' }}
+                                                    >
+                                                        <BlurImage
+                                                            src={'image' in method ? method.image : ''}
+                                                            alt={'alt' in method ? method.alt || method.name : ''}
+                                                            fill
+                                                        />
+                                                    </Link>
+                                                ) : (
+                                                    <div 
+                                                        className={cn(
+                                                            "inline-block relative flex-none",
+                                                            // `w-[${method.width}px] h-[${method.height}px]` // in px w-48 h-12 = 192px x 48px
+                                                        )}
+                                                        style={{ width: method.width ? `${method.width}px` : 'auto', height: method.height ? `${method.height}px` : 'auto' }}
+                                                    >
+                                                        <BlurImage
+                                                            src={'image' in method ? method.image : ''}
+                                                            alt={'alt' in method ? method.alt || method.name : ''}
+                                                            fill
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -550,17 +609,17 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                 </div>
 
                 <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                <div className="flex items-start gap-3">
-                    <Shield className="h-5 w-5 text-blue-500 mt-0.5" />
-                    <div>
-                    <h4 className="font-semibold text-sm">Important Notice</h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        All donations go directly to verified humanitarian organizations and relief efforts. 
-                        Please verify the authenticity of any donation links and be cautious of scams. 
-                        Your support is crucial for providing essential aid to those in need.
-                    </p>
+                    <div className="flex items-start gap-3">
+                        <Shield className="relative flex-none h-5 w-5 text-blue-500 mt-0.5" />
+                        <div>
+                            <h4 className="font-semibold text-sm">Important Notice</h4>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                All donations go directly to verified humanitarian organizations and relief efforts. 
+                                Please verify the authenticity of any donation links and be cautious of scams. 
+                                Your support is crucial for providing essential aid to those in need.
+                            </p>
+                        </div>
                     </div>
-                </div>
                 </div>
             </DialogContent>
         </Dialog>
