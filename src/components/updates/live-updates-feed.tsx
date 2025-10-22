@@ -441,7 +441,7 @@ export default function LiveUpdatesFeed({ expanded }: LiveUpdatesFeedProps) {
             </ScrollArea>
             {/* Selected Update Details in Dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[725px]">
                     {selectedUpdate && (
                         <>
                             <DialogHeader>
